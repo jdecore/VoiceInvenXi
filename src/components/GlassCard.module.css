@@ -1,0 +1,43 @@
+.glassCard {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  padding: var(--space-xl);
+  position: relative;
+  overflow: hidden;
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glassCard {
+    background: rgba(18, 18, 26, 0.95);
+  }
+}
+
+.elevated {
+  box-shadow: var(--glass-shadow-elevated);
+}
+
+.interactive {
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-elevated);
+  border-color: var(--glass-border-hover);
+}
+
+.compact {
+  padding: var(--space-lg);
+}
+
+.noPadding {
+  padding: 0;
+}

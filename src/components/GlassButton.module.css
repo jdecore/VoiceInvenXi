@@ -1,0 +1,89 @@
+.glassButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base), filter var(--transition-fast);
+}
+
+.sm {
+  padding: 10px 20px;
+  font-size: var(--font-size-sm);
+}
+
+.md {
+  padding: 14px 28px;
+  font-size: var(--font-size-md);
+}
+
+.lg {
+  padding: 18px 36px;
+  font-size: var(--font-size-lg);
+}
+
+.secondary {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text);
+  box-shadow: var(--glass-shadow);
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+  }
+}
+
+.secondary:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+}
+
+.primary {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.45), rgba(79, 140, 255, 0.2));
+  border: 1px solid rgba(79, 140, 255, 0.5);
+  color: var(--color-text);
+  box-shadow: var(--glass-shadow), 0 0 24px rgba(79, 140, 255, 0.25);
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+  }
+}
+
+.primary:hover {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.55), rgba(79, 140, 255, 0.3));
+  filter: brightness(1.08);
+}
+
+.danger {
+  background: linear-gradient(135deg, rgba(255, 90, 95, 0.45), rgba(255, 90, 95, 0.2));
+  border: 1px solid rgba(255, 90, 95, 0.5);
+  color: var(--color-text);
+  box-shadow: var(--glass-shadow), 0 0 24px rgba(255, 90, 95, 0.25);
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+  }
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.focusVisible:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--glass-shadow),
+    0 0 0 3px rgba(79, 140, 255, 0.65);
+}

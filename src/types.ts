@@ -1,0 +1,44 @@
+export interface Product {
+  id: string
+  barcode: string
+  name: string
+  brand: string
+  category: string
+  presentation: string
+  unit: string
+  stock: number
+  imageUrl: string | null
+}
+
+export interface CreateProductDTO {
+  barcode: string
+  name: string
+  brand: string
+  category: string
+  presentation: string
+  unit: string
+}
+
+export interface Movement {
+  id: string
+  productId: string
+  quantity: number
+  type: 'in' | 'out'
+  createdAt: string
+}
+
+export interface CreateMovementDTO {
+  productId: string
+  quantity: number
+  type: 'in' | 'out'
+}
+
+export interface ApiResponse<T> {
+  data: T
+  success: boolean
+  message?: string
+}
+
+export type GlassVariant = 'primary' | 'secondary' | 'danger'
+
+export type ButtonSize = 'sm' | 'md' | 'lg'
