@@ -1,19 +1,27 @@
 .phoneFrame {
-  width: 351px;
-  height: 649px;
-  border-radius: 44px;
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
   overflow: hidden;
   position: relative;
   background: var(--color-bg);
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+}
+
+@media (min-width: 481px) {
+  .phoneFrame {
+    border-radius: 44px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    height: min(100dvh, 844px);
+    max-height: 844px;
+  }
 }
 
 .screen {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -23,15 +31,4 @@
 
 .screen::-webkit-scrollbar {
   display: none;
-}
-
-@media (max-width: 500px) {
-  .phoneFrame {
-    width: 100%;
-    height: 100dvh;
-    height: 100vh;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-  }
 }

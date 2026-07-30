@@ -25,6 +25,15 @@ VoiceInvenXi es una aplicación de inventario para bodegas. Los operarios escane
 
 **NO usar:** Tailwind, MUI, Ant Design, Bootstrap, o cualquier librería de componentes pesada.
 
+### Responsive Design
+
+La app es full-screen y se adapta a cualquier dispositivo:
+
+- **Mobile** (`< 481px`): sin bordes ni sombras, ocupa 100% de la pantalla
+- **Desktop** (`≥ 481px`): se centra como mockup de teléfono con max-width 480px, border-radius 44px y sombra, altura máxima 844px
+- **CSS Custom Properties fluídas**: spacing, font-size y radius usan `clamp()` para escalar suavemente entre pantallas chicas y grandes
+- **Unidades relativas**: todos los componentes usan `100%`, `100dvh`, `flex`, y las variables CSS fluidas. Sin valores fijos en pixeles para layout
+
 ---
 
 ## Estructura del Proyecto
@@ -42,8 +51,13 @@ src/
 │   ├── globals.css             # CSS custom properties (tokens), reset, font Inter
 │   └── animations.css          # @keyframes compartidos (pulse, ripple, scanLine, etc.)
 │
+├── lib/
+│   └── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
+│
 ├── hooks/
-│   ├── useVoiceRecognition.ts  # Wrapper Web Speech API (es-ES, interim results)
+│   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
+│   ├── useSTT.ts               # Speech-to-Text con ElevenLabs via MediaRecorder
+│   ├── useTTS.ts               # Text-to-Speech con ElevenLabs (lee en voz alta)
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
 ├── components/                 # 11 componentes reutilizables
@@ -59,12 +73,12 @@ src/
 │   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz
 │   ├── SuccessCheck.tsx        # Overlay con check verde animado + ripple + mensaje
 │   ├── LoadingDots.tsx         # 3 puntos que rebotan + texto
-│   └── PhoneFrame.tsx          # Contenedor de teléfono simulado (390×844px, notch, border-radius 44px)
+│   └── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px)
 │
-└── pages/                      # 3 pantallas lazy-loaded
-    ├── SearchPage.tsx          # Ruta: /
-    ├── ProductPage.tsx         # Ruta: /product/:barcode
-    └── NewProductPage.tsx      # Ruta: /new/:barcode
+└── pages/                      # 3 pantallas lazy-loaded con TTS
+    ├── SearchPage.tsx          # Ruta: / – TTS al escanear "Buscando producto"
+    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto + confirma movimiento
+    └── NewProductPage.tsx      # Ruta: /new/:barcode – TTS guía llenado + confirma guardado
 ```
 
 ---
@@ -152,6 +166,31 @@ Crea un nuevo producto.
 }
 ```
 
+#### POST /api/tts
+Convierte texto a voz usando ElevenLabs.
+
+**Request body:**
+```json
+{
+  "text": "Aceite de Oliva, 120 unidades en stock",
+  "voice_id": "LnGOA2SxH2fX1e1iNzEp"
+}
+```
+
+**Response (200):** Audio MP3 (`audio/mpeg`).
+
+#### POST /api/stt
+Convierte audio a texto usando ElevenLabs.
+
+**Request:** Multipart form con campo `file` (audio/webm).
+
+**Response exitosa (200):**
+```json
+{
+  "text": "veinte unidades"
+}
+```
+
 #### POST /api/movements
 Registra un movimiento de stock (entrada o salida).
 
@@ -235,13 +274,14 @@ interface ApiResponse<T> {
 ```
 backend/
 ├── main.py                 # FastAPI app, CORS, routers
-├── database.py             # SQLAlchemy + connection pool
+├── database.py             # SQLAlchemy + connection pool (statement_cache_size=0 para pgbouncer)
 ├── models.py               # SQLAlchemy models
 ├── schemas.py              # Pydantic schemas
 ├── routers/
 │   ├── products.py         # GET /api/products/:barcode, POST /api/products
-│   └── movements.py        # POST /api/movements
-└── requirements.txt
+│   ├── movements.py        # POST /api/movements
+│   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
+└── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, httpx, python-multipart
 ```
 
 ### CORS
@@ -303,6 +343,7 @@ VITE_API_URL=https://voiceinvenoxi-api.onrender.com
 DATABASE_URL=postgresql://user:pass@host:5432/voiceinvenoxi
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=eyJ...
+ELEVENLABS_API_KEY=sk_...
 ```
 
 ---
@@ -326,8 +367,8 @@ uvicorn main:app --reload --port 8000
 
 ## Reglas para el Backend Agent
 
-1. **NO modificar `src/`** - El frontend está completo y funciona. No tocar archivos en `src/`.
-2. **Respeta el `ApiResponse<T>` wrapper** - Todos los endpoints deben devolver `{ success: boolean, data: T, message?: string }`.
+1. **Respeta el `ApiResponse<T>` wrapper** - Todos los endpoints de negocio deben devolver `{ success: boolean, data: T, message?: string }`. Los endpoints `/api/tts` y `/api/stt` son proxies a ElevenLabs y devuelven formatos diferentes (audio MP3 y `{ text }` respectivamente).
+2. **statement_cache_size=0** - En `database.py` está configurado porque Supabase usa pgbouncer (pooler) que no soporta prepared statements de asyncpg.
 3. **El barcode es string, no number** - Puede contener letras en el futuro.
 4. **El stock se actualiza en el backend** - El frontend solo lee el stock, no lo muta directamente.
 5. **CORS obligatorio** - El frontend y backend están en dominios diferentes.
@@ -350,7 +391,7 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 ## Tech Debt / Known Issues
 
 1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
-2. **Web Speech API**: Solo funciona en Chrome/Edge. Planear migración a ElevenLabs para soporte universal.
+2. **ElevenLabs integrado**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) reemplazan a la Web Speech API. Funciona en cualquier navegador moderno. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
 3. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 4. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 5. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.

@@ -17,27 +17,27 @@
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   --glass-shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.35);
 
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
+  --space-xs: clamp(2px, 0.6vw, 4px);
+  --space-sm: clamp(4px, 1vw, 8px);
+  --space-md: clamp(8px, 1.5vw, 14px);
+  --space-lg: clamp(10px, 2vw, 20px);
+  --space-xl: clamp(14px, 3vw, 28px);
+  --space-2xl: clamp(20px, 5vw, 40px);
 
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
+  --radius-sm: clamp(8px, 1.5vw, 12px);
+  --radius-md: clamp(12px, 2vw, 16px);
+  --radius-lg: clamp(16px, 3vw, 24px);
+  --radius-xl: clamp(24px, 4vw, 32px);
   --radius-full: 9999px;
 
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 20px;
-  --font-size-xl: 24px;
-  --font-size-2xl: 32px;
-  --font-size-hero: 40px;
+  --font-size-xs: clamp(10px, 1.5vw, 12px);
+  --font-size-sm: clamp(11px, 1.8vw, 14px);
+  --font-size-md: clamp(13px, 2vw, 16px);
+  --font-size-lg: clamp(14px, 2.5vw, 20px);
+  --font-size-xl: clamp(18px, 3vw, 24px);
+  --font-size-2xl: clamp(22px, 4vw, 32px);
+  --font-size-hero: clamp(26px, 5vw, 40px);
 
   --transition-fast: 0.15s ease;
   --transition-base: 0.25s ease;

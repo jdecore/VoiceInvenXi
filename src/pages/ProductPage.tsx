@@ -10,7 +10,8 @@ import MicButton from '@/components/MicButton'
 import VoiceWave from '@/components/VoiceWave'
 import SuccessCheck from '@/components/SuccessCheck'
 import LoadingDots from '@/components/LoadingDots'
-import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'
+import { useSTT } from '@/hooks/useSTT'
+import { useTTS } from '@/hooks/useTTS'
 import { productApi, movementApi } from '@/api'
 import type { Product } from '@/types'
 import styles from './ProductPage.module.css'
@@ -33,13 +34,19 @@ export default function ProductPage() {
 
     productApi
       .getByBarcode(barcode)
-      .then((data) => setProduct(data))
-      .catch(() => setProduct(undefined))
+      .then((data) => {
+        setProduct(data)
+        speakText(`${data.name}, ${data.stock} ${data.unit || 'unidades'} en stock`)
+      })
+      .catch(() => {
+        navigate(`/new/${barcode}`, { replace: true })
+      })
       .finally(() => setIsLoading(false))
   }, [barcode])
 
   const { isListening, transcript, interimTranscript, start, stop, isSupported } =
-    useVoiceRecognition()
+    useSTT()
+  const { speak: speakText } = useTTS()
 
   const handleVoiceToggle = useCallback(() => {
     if (isListening) {
@@ -78,6 +85,7 @@ export default function ProductPage() {
       setAddedQty(qty)
       setIsProcessing(false)
       setShowSuccess(true)
+      speakText(`${qty} ${product.unit || 'unidades'} ${movementType === 'in' ? 'agregadas' : 'retiradas'}`)
     }
   }, [transcript, product, movementType])
 
@@ -117,13 +125,7 @@ export default function ProductPage() {
           <span className={styles.logo}>VoiceInvenXi</span>
         </div>
         <div className={styles.content}>
-          <GlassCard>
-            <div style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                Producto no encontrado
-              </p>
-            </div>
-          </GlassCard>
+          <LoadingDots text="Redirigiendo..." />
         </div>
       </div>
     )

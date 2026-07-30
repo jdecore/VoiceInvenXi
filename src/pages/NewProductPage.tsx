@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { ArrowLeft, Check, Tag, Building2, LayoutGrid, Box, Scale } from 'lucide-react'
@@ -11,7 +11,8 @@ import MicButton from '@/components/MicButton'
 import VoiceWave from '@/components/VoiceWave'
 import SuccessCheck from '@/components/SuccessCheck'
 import LoadingDots from '@/components/LoadingDots'
-import { useVoiceRecognition } from '@/hooks/useVoiceRecognition'
+import { useSTT } from '@/hooks/useSTT'
+import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
 import styles from './NewProductPage.module.css'
 
@@ -65,7 +66,8 @@ export default function NewProductPage() {
   const [validationError, setValidationError] = useState('')
 
   const { isListening, transcript, interimTranscript, start, stop, isSupported, reset } =
-    useVoiceRecognition()
+    useSTT()
+  const { speak: speakText } = useTTS()
 
   const updateField = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -85,21 +87,24 @@ export default function NewProductPage() {
     [isListening, activeField, start, stop, reset]
   )
 
-  const handleVoiceComplete = useCallback(() => {
-    if (transcript && activeField) {
+  useEffect(() => {
+    if (!isListening && transcript && activeField) {
       updateField(activeField, transcript)
       setActiveField(null)
+      reset()
     }
-  }, [transcript, activeField, updateField])
+  }, [isListening, transcript, activeField, updateField, reset])
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) {
       setValidationError('El nombre es obligatorio')
+      speakText('El nombre es obligatorio')
       return
     }
 
     if (!barcode) {
       setValidationError('Código de barras no disponible')
+      speakText('Código de barras no disponible')
       return
     }
 
@@ -114,8 +119,10 @@ export default function NewProductPage() {
         unit: form.unit,
       })
       setShowSuccess(true)
+      speakText('Producto registrado correctamente')
     } catch {
       setValidationError('Error al guardar el producto')
+      speakText('Error al guardar el producto')
     } finally {
       setIsSaving(false)
     }
@@ -205,14 +212,6 @@ export default function NewProductPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {isListening && !interimTranscript && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onAnimationComplete={handleVoiceComplete}
-          />
-        )}
 
         {isSaving && <LoadingDots text="Guardando producto..." />}
 

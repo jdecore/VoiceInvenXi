@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { Search } from 'lucide-react'
 import CameraView from '@/components/CameraView'
 import LoadingDots from '@/components/LoadingDots'
+import { useTTS } from '@/hooks/useTTS'
 import styles from './SearchPage.module.css'
 
 const MOCK_BARCODES = [
@@ -19,6 +20,14 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [scanning, setScanning] = useState(true)
   const scanCooldown = useRef(false)
+  const { speak: speakText } = useTTS()
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      speakText('Apunta la cámara al código de barras')
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [])
 
   const handleBarcode = useCallback(
     (barcode: string) => {
@@ -26,6 +35,7 @@ export default function SearchPage() {
       scanCooldown.current = true
       setIsLoading(true)
       setScanning(false)
+      speakText('Buscando producto')
 
       setTimeout(() => {
         navigate(`/product/${barcode}`)
@@ -42,6 +52,7 @@ export default function SearchPage() {
     if (isLoading) return
     setIsLoading(true)
     setScanning(false)
+    speakText('Buscando producto')
 
     setTimeout(() => {
       const randomBarcode =
