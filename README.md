@@ -2,7 +2,7 @@
 
 ## ❌ El Problema
 
-
+| | |
 |---|---|
 | 📋 | Planillas mal llenadas |
 | ✏️ | Errores de tipeo al registrar productos |
@@ -13,7 +13,7 @@ Los métodos manuales abren la puerta a equivocaciones costosas. Cada error en u
 
 ## ✅ La Solución
 
-
+| | |
 |---|---|
 | 📷 | Escanea el código de barras con la cámara |
 | 🗣️ | Habla para registrar entradas y salidas de stock |
