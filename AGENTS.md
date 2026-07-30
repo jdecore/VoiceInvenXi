@@ -56,8 +56,13 @@ src/
 │
 ├── hooks/
 │   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
+<<<<<<< HEAD
 │   ├── useSTT.ts               # Speech-to-Text con ElevenLabs via MediaRecorder
 │   ├── useTTS.ts               # Text-to-Speech con ElevenLabs (lee en voz alta)
+=======
+│   ├── useSTT.ts               # STT: ElevenLabs via MediaRecorder con fallback a Web Speech API
+│   ├── useTTS.ts               # TTS: ElevenLabs (lee en voz alta) con fallback a speechSynthesis
+>>>>>>> 7b02330 (readme)
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
 ├── components/                 # 11 componentes reutilizables
@@ -76,9 +81,15 @@ src/
 │   └── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px)
 │
 └── pages/                      # 3 pantallas lazy-loaded con TTS
+<<<<<<< HEAD
     ├── SearchPage.tsx          # Ruta: / – TTS al escanear "Buscando producto"
     ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto + confirma movimiento
     └── NewProductPage.tsx      # Ruta: /new/:barcode – TTS guía llenado + confirma guardado
+=======
+    ├── SearchPage.tsx          # Ruta: / – TTS bienvenida "Apunta la cámara al código de barras" + escaneo
+    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto, si no existe redirige a /new/:barcode
+    └── NewProductPage.tsx      # Ruta: /new/:barcode – Formulario con STX por campo + TTS al guardar
+>>>>>>> 7b02330 (readme)
 ```
 
 ---
@@ -86,10 +97,14 @@ src/
 ## Flujo de Navegación
 
 ```
-/                    → SearchPage (cámara + botón búsqueda)
-/product/:barcode    → ProductPage (producto encontrado, registrar movimiento)
-/new/:barcode        → NewProductPage (producto no encontrado, crear nuevo)
+/                    → SearchPage (cámara + botón búsqueda + TTS "Apunta la cámara al código de barras")
+/product/:barcode    → ProductPage (producto encontrado → registrar movimiento)
+                    → si no existe → redirige automáticamente a /new/:barcode
+/new/:barcode        → NewProductPage (formulario con STT para llenar campos + guardar)
 ```
+
+### Nota sobre producto no encontrado
+Cuando `ProductPage` recibe un 404 del backend (o el producto no está en mock data), redirige automáticamente a `/new/:barcode` con `{ replace: true }`. No muestra mensaje estático de "no encontrado".
 
 ---
 
@@ -384,6 +399,8 @@ uvicorn main:app --reload --port 8000
 
 Para probar el frontend sin backend, ejecutar `npm run dev` y usar los mock data que están en `src/constants.ts`. El SearchPage simula escaneos aleatorios de los 5 productos mock.
 
+**TTS/STT en desarrollo**: Sin backend, los hooks `useTTS` y `useSTT` fallback automáticamente a las APIs nativas del navegador (`window.speechSynthesis` y `SpeechRecognition`). No requieren configuración adicional.
+
 Para probar con backend real, crear la variable de entorno `VITE_API_URL` apuntando a tu API.
 
 ---
@@ -391,7 +408,12 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 ## Tech Debt / Known Issues
 
 1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
+<<<<<<< HEAD
 2. **ElevenLabs integrado**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) reemplazan a la Web Speech API. Funciona en cualquier navegador moderno. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
+=======
+2. **ElevenLabs + fallback Web Speech**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) intentan ElevenLabs vía backend proxy. Si falla (desarrollo sin backend), caen automáticamente a `speechSynthesis` y `SpeechRecognition` nativos del navegador. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
+>>>>>>> 7b02330 (readme)
 3. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 4. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 5. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
+6. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.

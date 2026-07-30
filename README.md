@@ -1,32 +1,40 @@
-# React + TypeScript + Vite
+# 🎤 VoiceInvenXi
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+<p align="center">
+  <strong>Inventario por voz. Simple, rápido, sin errores.</strong>
+</p>
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ❌ El Problema
 
-## React Compiler
+| | |
+|---|---|
+| 📋 | Planillas mal llenadas |
+| ✏️ | Errores de tipeo al registrar productos |
+| ⏳ | Tiempo perdido en papeleo |
+| 💸 | Inventarios incorrectos que cuestan dinero |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Los métodos manuales abren la puerta a equivocaciones costosas. Cada error en un conteo puede significar pérdidas difíciles de recuperar.
 
-## Expanding the Oxlint configuration
+## ✅ La Solución
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+| | |
+|---|---|
+| 📷 | Escanea el código de barras con la cámara |
+| 🗣️ | Habla para registrar entradas y salidas de stock |
+| ⚡ | Todo se sincroniza al instante |
+| 💰 | Económico, sin equipos especializados |
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+VoiceInvenXi permite que cualquier operario con un celular maneje el inventario **sin planillas, sin tipeo, sin errores**.
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 🛠️ Stack
+
+| Tecnología | Uso |
+|---|---|
+| **React 19** + **TypeScript** | UI moderna y tipada |
+| **Vite** | Build rápido |
+| **react-router** | Navegación |
+| **motion** | Animaciones |
+| **lucide-react** | Iconos |
+| **CSS Modules** | Estilos con scope |
