@@ -1,10 +1,4 @@
-# 🎤 VoiceInvenXi
-
-<p align="center">
-  <strong>Inventario por voz. Simple, rápido, sin errores.</strong>
-</p>
-
----
+# 🎤 VoiceInvenXi: Inventario por voz. Simple, rápido, sin errore
 
 ## ❌ El Problema
 
