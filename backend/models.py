@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import String, Integer, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from database import Base
+from database import Base, IS_POSTGRES
 
 
 def generate_uuid() -> str:
@@ -13,10 +14,13 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+_id_type = PG_UUID(as_uuid=False) if IS_POSTGRES else String
+
+
 class Product(Base):
     __tablename__ = "products"
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    id: Mapped[str] = mapped_column(_id_type, primary_key=True, default=generate_uuid)
     barcode: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     brand: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -34,8 +38,8 @@ class Product(Base):
 class Movement(Base):
     __tablename__ = "movements"
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
-    product_id: Mapped[str] = mapped_column(String, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[str] = mapped_column(_id_type, primary_key=True, default=generate_uuid)
+    product_id: Mapped[str] = mapped_column(_id_type, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     type: Mapped[str] = mapped_column(String(10), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
