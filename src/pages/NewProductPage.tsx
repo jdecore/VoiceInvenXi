@@ -1,12 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft, Check, Tag, Building2, LayoutGrid, Box, Scale } from 'lucide-react'
-import GlassCard from '@/components/GlassCard'
+import { ArrowLeft, Check, ChevronRight, Tag, Building2, LayoutGrid, Box, Scale, Package } from 'lucide-react'
 import GlassButton from '@/components/GlassButton'
 import GlassInput from '@/components/GlassInput'
-import ProductImage from '@/components/ProductImage'
-import Barcode from '@/components/Barcode'
 import MicButton from '@/components/MicButton'
 import VoiceWave from '@/components/VoiceWave'
 import SuccessCheck from '@/components/SuccessCheck'
@@ -32,68 +29,104 @@ const INITIAL_FORM: FormData = {
   unit: '',
 }
 
-const FIELD_ICONS: Record<keyof FormData, React.ReactNode> = {
-  name: <Tag size={18} />,
-  brand: <Building2 size={18} />,
-  category: <LayoutGrid size={18} />,
-  presentation: <Box size={18} />,
-  unit: <Scale size={18} />,
+interface StepConfig {
+  key: keyof FormData
+  label: string
+  icon: React.ReactNode
+  required: boolean
+  placeholder: string
 }
 
-const FIELD_LABELS: Record<keyof FormData, string> = {
-  name: 'Nombre',
-  brand: 'Marca',
-  category: 'Categoría',
-  presentation: 'Presentación',
-  unit: 'Unidad',
-}
-
-const FIELD_PLACEHOLDERS: Record<keyof FormData, string> = {
-  name: 'Ej: Aceite de Oliva',
-  brand: 'Ej: La Española',
-  category: 'Ej: Abarrotes',
-  presentation: 'Ej: Botella 500ml',
-  unit: 'Ej: Unidad',
-}
+const STEPS: StepConfig[] = [
+  { key: 'name', label: 'Nombre del Producto', icon: <Tag size={18} />, required: true, placeholder: 'Ej: Aceite de Oliva' },
+  { key: 'brand', label: 'Marca', icon: <Building2 size={18} />, required: false, placeholder: 'Ej: La Española' },
+  { key: 'category', label: 'Categoría', icon: <LayoutGrid size={18} />, required: false, placeholder: 'Ej: Abarrotes' },
+  { key: 'presentation', label: 'Presentación', icon: <Box size={18} />, required: false, placeholder: 'Ej: Botella 500ml' },
+  { key: 'unit', label: 'Unidad de Medida', icon: <Scale size={18} />, required: false, placeholder: 'Ej: Unidad' },
+]
 
 export default function NewProductPage() {
   const { barcode } = useParams<{ barcode: string }>()
   const navigate = useNavigate()
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
-  const [activeField, setActiveField] = useState<keyof FormData | null>(null)
+  const [step, setStep] = useState(0)
+  const [direction, setDirection] = useState(1)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [validationError, setValidationError] = useState('')
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { isListening, transcript, interimTranscript, start, stop, isSupported, reset } =
+  const { isListening, transcript, interimTranscript, start, stop, isSupported, reset, error: sttError } =
     useSTT()
   const { speak: speakText } = useTTS()
+
+  const currentStep = STEPS[step]
+  const isLastStep = step === STEPS.length - 1
 
   const updateField = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
     setValidationError('')
   }, [])
 
-  const handleMicPress = useCallback(
-    (field: keyof FormData) => {
-      if (isListening && activeField === field) {
-        stop()
-      } else {
-        setActiveField(field)
-        reset()
-        start()
-      }
-    },
-    [isListening, activeField, start, stop, reset]
-  )
+  const handleMicPress = useCallback(() => {
+    if (isListening) {
+      stop()
+    } else {
+      reset()
+      start()
+    }
+  }, [isListening, start, stop, reset])
 
   useEffect(() => {
-    if (!isListening && transcript && activeField) {
-      updateField(activeField, transcript)
-      setActiveField(null)
+    if (!isListening && transcript && !showSuccess && !isSaving) {
+      updateField(currentStep.key, transcript)
       reset()
+
+      if (!currentStep.required) {
+        autoAdvanceTimerRef.current = setTimeout(() => {
+          setDirection(1)
+          setStep((prev) => Math.min(prev + 1, STEPS.length - 1))
+        }, 600)
+      }
     }
-  }, [isListening, transcript, activeField, updateField, reset])
+  }, [isListening, transcript, showSuccess, isSaving, currentStep.key, currentStep.required, updateField, reset])
+
+  useEffect(() => {
+    if (sttError) {
+      setValidationError(sttError)
+    }
+  }, [sttError])
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current)
+    }
+  }, [])
+
+  const handleNext = useCallback(() => {
+    if (currentStep.required && !form[currentStep.key].trim()) {
+      setValidationError(`El campo "${currentStep.label}" es obligatorio`)
+      speakText(`El campo ${currentStep.label} es obligatorio`)
+      return
+    }
+
+    if (isLastStep) {
+      handleSave()
+      return
+    }
+
+    setDirection(1)
+    setStep((prev) => prev + 1)
+    setValidationError('')
+  }, [currentStep, form, isLastStep, speakText])
+
+  const handleBack = useCallback(() => {
+    if (step > 0) {
+      setDirection(-1)
+      setStep((prev) => prev - 1)
+      setValidationError('')
+    }
+  }, [step])
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) {
@@ -126,13 +159,15 @@ export default function NewProductPage() {
     } finally {
       setIsSaving(false)
     }
-  }, [form, barcode])
+  }, [form, barcode, speakText])
 
   const handleSuccessComplete = useCallback(() => {
     navigate('/')
   }, [navigate])
 
-  const fieldKeys: (keyof FormData)[] = ['name', 'brand', 'category', 'presentation', 'unit']
+  const micStatusText = isListening
+    ? (interimTranscript || 'Escuchando...')
+    : (form[currentStep.key] ? 'Toca para cambiar' : 'Toca para hablar...')
 
   return (
     <div className={styles.page}>
@@ -142,7 +177,7 @@ export default function NewProductPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <button className={styles.backButton} onClick={() => navigate('/')}>
+        <button className={styles.backButton} onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
         <span className={styles.logo}>VoiceInvenXi</span>
@@ -150,90 +185,112 @@ export default function NewProductPage() {
 
       <div className={styles.content}>
         <motion.div
-          className={styles.headerSection}
+          className={styles.wizardCard}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <ProductImage alt="Producto escaneado" size="md" />
-          <span className={styles.scannedLabel}>Código escaneado</span>
-          <Barcode value={barcode || '---'} />
-        </motion.div>
+          {/* Header compacto del producto */}
+          <div className={styles.productHeader}>
+            <div className={styles.productThumb}>
+              <Package size={24} />
+            </div>
+            <div className={styles.productInfo}>
+              <span className={styles.productName}>
+                {form.name || 'Nuevo Producto'}
+              </span>
+              <span className={styles.productMeta}>
+                {[form.brand, form.category, form.presentation].filter(Boolean).join(' · ') || barcode}
+              </span>
+            </div>
+          </div>
 
-        <div className={styles.formSection}>
-          {fieldKeys.map((field, index) => (
-            <motion.div
-              key={field}
-              className={styles.fieldRow}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 + index * 0.08 }}
-            >
-              <div className={styles.fieldInput}>
-                <GlassInput
-                  label={FIELD_LABELS[field]}
-                  value={form[field]}
-                  onChange={(v) => updateField(field, v)}
-                  placeholder={FIELD_PLACEHOLDERS[field]}
-                  icon={FIELD_ICONS[field]}
+          {/* Indicador de paso */}
+          <div className={styles.stepIndicator}>
+            <span className={styles.stepTitle}>
+              Paso {step + 1} de {STEPS.length}: {currentStep.label}
+            </span>
+            <div className={styles.stepDots}>
+              {STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`${styles.dot} ${i === step ? styles.dotActive : ''} ${i < step ? styles.dotCompleted : ''}`}
                 />
-              </div>
-              {isSupported && (
-                <MicButton
-                  isListening={isListening && activeField === field}
-                  onClick={() => handleMicPress(field)}
-                  size={20}
-                />
-              )}
-            </motion.div>
-          ))}
-        </div>
+              ))}
+            </div>
+          </div>
 
-        <AnimatePresence>
-          {isListening && activeField && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              style={{ overflow: 'hidden' }}
-            >
-              <GlassCard compact>
-                <div style={{ textAlign: 'center' }}>
-                  <VoiceWave active />
-                  <div style={{
-                    marginTop: 'var(--space-sm)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                  }}>
-                    {interimTranscript || 'Escuchando...'}
-                  </div>
+          {/* Área de interacción */}
+          <div className={styles.stepBody}>
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={step}
+                custom={direction}
+                initial={{ opacity: 0, x: direction * 60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction * -60 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className={styles.stepContent}
+              >
+                <div className={styles.inputArea}>
+                  <GlassInput
+                    label={currentStep.label}
+                    value={form[currentStep.key]}
+                    onChange={(v) => updateField(currentStep.key, v)}
+                    placeholder={currentStep.placeholder}
+                    icon={currentStep.icon}
+                  />
                 </div>
-              </GlassCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {isSaving && <LoadingDots text="Guardando producto..." />}
+                {isSupported && (
+                  <div className={styles.micArea}>
+                    <MicButton
+                      isListening={isListening}
+                      onClick={handleMicPress}
+                      size={32}
+                    />
+                    <VoiceWave active={isListening} />
+                    <span className={`${styles.micLabel} ${isListening ? styles.micLabelActive : ''}`}>
+                      {micStatusText}
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-        <motion.div
-          className={styles.footerSection}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          {validationError && (
-            <span className={styles.validationError}>{validationError}</span>
-          )}
-          <GlassButton
-            variant="primary"
-            size="lg"
-            fullWidth
-            icon={<Check size={22} />}
-            onClick={handleSave}
-            disabled={showSuccess || isSaving}
-          >
-            Guardar
-          </GlassButton>
+          {/* Footer con acción */}
+          <div className={styles.stepFooter}>
+            {validationError && (
+              <span className={styles.validationError}>{validationError}</span>
+            )}
+
+            {isSaving && <LoadingDots text="Guardando producto..." />}
+
+            {!isSaving && !showSuccess && (
+              <>
+                {step > 0 && (
+                  <GlassButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleBack}
+                  >
+                    ← Atrás
+                  </GlassButton>
+                )}
+                <GlassButton
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  icon={isLastStep ? <Check size={22} /> : <ChevronRight size={22} />}
+                  onClick={handleNext}
+                  disabled={showSuccess || isSaving}
+                >
+                  {isLastStep ? 'Guardar Producto' : 'Confirmar →'}
+                </GlassButton>
+              </>
+            )}
+          </div>
         </motion.div>
       </div>
 

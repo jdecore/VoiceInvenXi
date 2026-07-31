@@ -44,48 +44,170 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-sm) var(--space-xl);
-  gap: var(--space-sm);
+  gap: var(--space-md);
   overflow-y: auto;
 }
 
-.headerSection {
+.wizardCard {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+}
+
+.productHeader {
+  display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: var(--space-md);
 }
 
-.scannedLabel {
-  font-size: var(--font-size-xs);
+.productThumb {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
+  overflow: hidden;
 }
 
-.formSection {
+.productThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.productInfo {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.fieldRow {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--space-sm);
-}
-
-.fieldInput {
+  gap: 2px;
+  min-width: 0;
   flex: 1;
 }
 
-.footerSection {
+.productName {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.productMeta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stepIndicator {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.stepTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stepDots {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all var(--transition-fast);
+}
+
+.dotActive {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px rgba(79, 140, 255, 0.5);
+  transform: scale(1.2);
+}
+
+.dotCompleted {
+  background: var(--color-success);
+}
+
+.stepBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
   padding: var(--space-md) 0;
-  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom, 16px));
+}
+
+.inputArea {
+  width: 100%;
+}
+
+.micArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.micLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  transition: color var(--transition-fast);
+}
+
+.micLabelActive {
+  color: var(--color-accent);
+}
+
+.stepFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   margin-top: auto;
 }
 
@@ -96,19 +218,23 @@
 }
 
 @media (max-height: 700px) {
-  .headerSection {
-    gap: var(--space-xs);
+  .wizardCard {
+    padding: var(--space-md);
   }
 
-  .formSection {
-    gap: var(--space-xs);
+  .productHeader {
+    gap: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-sm);
   }
 
-  .fieldRow {
-    gap: var(--space-xs);
+  .productThumb {
+    width: 40px;
+    height: 40px;
   }
 
-  .footerSection {
+  .stepContent {
+    gap: var(--space-md);
     padding: var(--space-sm) 0;
   }
 }

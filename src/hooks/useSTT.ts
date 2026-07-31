@@ -9,9 +9,11 @@ interface UseSTT {
   stop: () => void
   isSupported: boolean
   reset: () => void
+  error: string | null
 }
 
 const MAX_RECORDING_MS = 10_000
+const WEB_SPEECH_TIMEOUT_MS = 15_000
 
 function nextTick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 10))
@@ -23,6 +25,7 @@ export function useSTT(): UseSTT {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const isListeningRef = useRef(false)
   const modeRef = useRef<Mode>('idle')
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -71,6 +74,10 @@ export function useSTT(): UseSTT {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop()
     }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
   }, [])
 
   const startElevenLabs = useCallback(async () => {
@@ -111,6 +118,7 @@ export function useSTT(): UseSTT {
             } else {
               setTranscript('')
               setIsListening(false)
+              setError('Error al procesar audio')
             }
           }
         } else {
@@ -121,6 +129,7 @@ export function useSTT(): UseSTT {
 
       setIsListening(true)
       setInterimTranscript('')
+      setError(null)
 
       nextTick().then(() => {
         if (isListeningRef.current) {
@@ -140,7 +149,7 @@ export function useSTT(): UseSTT {
     } catch {
       return false
     }
-  }, [cleanup])
+  }, [cleanup, hasWebSpeech])
 
   const startWebSpeech = useCallback(() => {
     if (!SpeechRecognitionAPI) return false
@@ -172,45 +181,75 @@ export function useSTT(): UseSTT {
       isListeningRef.current = false
       setIsListening(false)
       recognitionRef.current = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
     }
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       isListeningRef.current = false
       setIsListening(false)
       recognitionRef.current = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+
+      if (event.error === 'not-allowed') {
+        setError('Permiso de micrófono denegado')
+      } else if (event.error === 'no-speech') {
+        setError('No se detectó voz. Intenta de nuevo.')
+      } else if (event.error === 'network') {
+        setError('Error de red')
+      } else if (event.error !== 'aborted') {
+        setError('Error de reconocimiento de voz')
+      }
     }
 
     recognition.start()
     setIsListening(true)
     setTranscript('')
     setInterimTranscript('')
+    setError(null)
+
+    timeoutRef.current = setTimeout(() => {
+      if (isListeningRef.current && recognitionRef.current) {
+        recognitionRef.current.stop()
+        isListeningRef.current = false
+        setIsListening(false)
+        setError('Tiempo de espera agotado')
+      }
+    }, WEB_SPEECH_TIMEOUT_MS)
 
     return true
   }, [SpeechRecognitionAPI])
 
   const start = useCallback(async () => {
     if (!isSupported || isListeningRef.current) return
-    isListeningRef.current = true
 
     cleanup()
     setTranscript('')
     setInterimTranscript('')
+    setError(null)
 
     if (hasWebSpeech) {
-      startWebSpeech()
+      const started = startWebSpeech()
+      if (started) {
+        isListeningRef.current = true
+      }
     } else if (hasMediaRecorder) {
       const started = await startElevenLabs()
-      if (!started) {
-        isListeningRef.current = false
+      if (started) {
+        isListeningRef.current = true
       }
-    } else {
-      isListeningRef.current = false
     }
   }, [isSupported, hasWebSpeech, hasMediaRecorder, cleanup, startWebSpeech, startElevenLabs])
 
   const reset = useCallback(() => {
     setTranscript('')
     setInterimTranscript('')
+    setError(null)
   }, [])
 
   useEffect(() => {
@@ -228,5 +267,6 @@ export function useSTT(): UseSTT {
     stop,
     isSupported,
     reset,
+    error,
   }
 }

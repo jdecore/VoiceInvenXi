@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { ArrowLeft } from 'lucide-react'
@@ -44,6 +44,8 @@ export default function ProductPage() {
       .finally(() => setIsLoading(false))
   }, [barcode])
 
+  const ttsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const { isListening, transcript, interimTranscript, start, stop, isSupported } =
     useSTT()
   const { speak: speakText } = useTTS()
@@ -85,9 +87,11 @@ export default function ProductPage() {
       setAddedQty(qty)
       setIsProcessing(false)
       setShowSuccess(true)
-      speakText(`${qty} ${product.unit || 'unidades'} ${movementType === 'in' ? 'agregadas' : 'retiradas'}`)
+      ttsTimerRef.current = setTimeout(() => {
+        speakText(`${qty} ${product.unit || 'unidades'} ${movementType === 'in' ? 'agregadas' : 'retiradas'}`)
+      }, 2000)
     }
-  }, [transcript, product, movementType])
+  }, [transcript, product, movementType, speakText])
 
   useEffect(() => {
     if (!isListening && transcript && !isProcessing && !showSuccess) {
@@ -97,6 +101,12 @@ export default function ProductPage() {
 
   const handleSuccessComplete = useCallback(() => {
     setShowSuccess(false)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+    }
   }, [])
 
   if (isLoading) {
