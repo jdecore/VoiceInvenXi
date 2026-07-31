@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from database import engine, Base, async_session
 from routers import products, movements, elevenlabs
@@ -12,6 +13,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {
+                "message": str(exc),
+                "type": type(exc).__name__,
+                "path": str(request.url),
+            }
+        },
+    )
 
 app.include_router(products.router)
 app.include_router(movements.router)
