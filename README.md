@@ -71,10 +71,6 @@ npm run build        # Build de produccion
 npm run lint         # Linting con oxlint
 ```
 
-## Desarrollo sin Backend
-
-La app funciona completamente sin backend. Los hooks `useTTS` y `useSTT` usan automaticamente las APIs nativas del navegador (`speechSynthesis` y `SpeechRecognition`). Los mock data en `src/constants.ts` simulan 5 productos de prueba.
-
 ## Variable de Entorno
 
 ```
