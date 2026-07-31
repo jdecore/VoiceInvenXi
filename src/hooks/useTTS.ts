@@ -18,9 +18,34 @@ export function useTTS() {
     setIsSpeaking(false)
   }, [])
 
+  const speakNative = useCallback((text: string) => {
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'es-ES'
+    utterance.rate = 0.9
+    utteranceRef.current = utterance
+
+    utterance.onend = () => {
+      utteranceRef.current = null
+      setIsSpeaking(false)
+    }
+
+    utterance.onerror = () => {
+      utteranceRef.current = null
+      setIsSpeaking(false)
+    }
+
+    window.speechSynthesis.speak(utterance)
+  }, [])
+
   const speakText = useCallback(async (text: string) => {
     stopSpeaking()
     setIsSpeaking(true)
+
+    if ('speechSynthesis' in window) {
+      speakNative(text)
+      return
+    }
 
     try {
       const blob = await speak(text)
@@ -42,29 +67,9 @@ export function useTTS() {
 
       await audio.play()
     } catch {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel()
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = 'es-ES'
-        utterance.rate = 0.9
-        utteranceRef.current = utterance
-
-        utterance.onend = () => {
-          utteranceRef.current = null
-          setIsSpeaking(false)
-        }
-
-        utterance.onerror = () => {
-          utteranceRef.current = null
-          setIsSpeaking(false)
-        }
-
-        window.speechSynthesis.speak(utterance)
-      } else {
-        setIsSpeaking(false)
-      }
+      setIsSpeaking(false)
     }
-  }, [stopSpeaking])
+  }, [stopSpeaking, speakNative])
 
   return { speak: speakText, isSpeaking, stop: stopSpeaking }
 }

@@ -196,17 +196,17 @@ export function useSTT(): UseSTT {
     setTranscript('')
     setInterimTranscript('')
 
-    if (hasMediaRecorder) {
-      const started = await startElevenLabs()
-      if (started) return
-    }
-
     if (hasWebSpeech) {
       startWebSpeech()
+    } else if (hasMediaRecorder) {
+      const started = await startElevenLabs()
+      if (!started) {
+        isListeningRef.current = false
+      }
     } else {
       isListeningRef.current = false
     }
-  }, [isSupported, hasMediaRecorder, hasWebSpeech, cleanup, startElevenLabs, startWebSpeech])
+  }, [isSupported, hasWebSpeech, hasMediaRecorder, cleanup, startWebSpeech, startElevenLabs])
 
   const reset = useCallback(() => {
     setTranscript('')
