@@ -43,6 +43,7 @@ export function useTTS() {
       await audio.play()
     } catch {
       if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = 'es-ES'
         utterance.rate = 0.9

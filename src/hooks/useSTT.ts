@@ -100,14 +100,23 @@ export function useSTT(): UseSTT {
             setTranscript(text)
             setInterimTranscript('')
             await nextTick()
+            setIsListening(false)
+            cleanup()
           } catch {
-            setTranscript('')
             setInterimTranscript('')
-          }
-        }
+            cleanup()
 
-        setIsListening(false)
-        cleanup()
+            if (hasWebSpeech) {
+              startWebSpeech()
+            } else {
+              setTranscript('')
+              setIsListening(false)
+            }
+          }
+        } else {
+          setIsListening(false)
+          cleanup()
+        }
       }
 
       setIsListening(true)
