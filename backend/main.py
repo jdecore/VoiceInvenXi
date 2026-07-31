@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
+from sqlalchemy import text
+from database import engine, Base, async_session
 from routers import products, movements, elevenlabs
 
 app = FastAPI(title="VoiceInvenXi API", version="1.0.0")
@@ -54,18 +55,26 @@ async def debug():
 @app.get("/api/debug/{barcode}")
 async def debug_product(barcode: str):
     import traceback
-    import sqlalchemy
-    from database import engine
+    from sqlalchemy import select
+    from database import async_session
+    from models import Product
+    results = {}
     try:
         async with engine.connect() as conn:
-            result = await conn.execute(
+            import sqlalchemy
+            r = await conn.execute(
                 sqlalchemy.text("SELECT * FROM products WHERE barcode = :barcode"),
                 {"barcode": barcode}
             )
-            row = result.mappings().first()
-            if row:
-                return {"found": True, "product": dict(row)}
-            else:
-                return {"found": False}
+            row = r.mappings().first()
+            results["raw_sql"] = dict(row) if row else None
     except Exception as e:
-        return {"error": type(e).__name__, "message": str(e), "traceback": traceback.format_exc()}
+        results["raw_sql"] = {"error": str(e)}
+    try:
+        async with async_session() as session:
+            result = await session.execute(select(Product).where(Product.barcode == barcode))
+            product = result.scalar_one_or_none()
+            results["orm"] = {"found": product is not None, "product": str(product) if product else None}
+    except Exception as e:
+        results["orm"] = {"error": str(e), "type": type(e).__name__, "traceback": traceback.format_exc()}
+    return results
