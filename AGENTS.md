@@ -6,8 +6,8 @@ VoiceInvenXi es una aplicación de inventario para bodegas. Los operarios escane
 
 **Arquitectura:**
 - Frontend: React 19 + TypeScript + Vite (ESTE REPOSITORIO)
-- Backend: FastAPI + PostgreSQL (A CONSTRUIR)
-- Deploy: Frontend en Vite/Vercel, Backend en Render, DB en Supabase
+- Backend: FastAPI + PostgreSQL (desplegado en Render)
+- Deploy: Frontend en Vercel, Backend en Render, DB en Supabase
 
 ---
 
@@ -45,7 +45,7 @@ src/
 ├── vite-env.d.ts               # Tipos globales (CSS Modules, SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
-├── api.ts                      # Fetcher genérico + productApi + movementApi
+├── api.ts                      # Fetcher genérico (timeout 15s, extrae error de detail.message) + productApi + movementApi
 │
 ├── styles/
 │   ├── globals.css             # CSS custom properties (tokens), reset, font Inter
@@ -295,16 +295,15 @@ backend/
 │   ├── products.py         # GET /api/products/:barcode, POST /api/products
 │   ├── movements.py        # POST /api/movements
 │   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
-└── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, httpx, python-multipart
+└── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart
 ```
 
 ### CORS
-El frontend se ejecuta en origen diferente. Configurar CORS para:
+El frontend se ejecuta en origen diferente. **NO usar wildcards como `*.vercel.app`** — FastAPI's `CORSMiddleware` hace match exacto y no soporta glob patterns. Usar `["*"]`:
 ```python
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://*.vercel.app"],
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -414,3 +413,5 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
 8. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.
+9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
+10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 15s para cold-starts de Render.
