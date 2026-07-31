@@ -1,5 +1,5 @@
 import { API_BASE, findMockProduct } from './constants'
-import type { ApiResponse, Product } from './types'
+import type { ApiResponse, Product, SemanticSearchResponse } from './types'
 
 async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`
@@ -51,6 +51,15 @@ export const movementApi = {
     return await fetcher<import('./types').Movement>('/api/movements', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  },
+}
+
+export const searchApi = {
+  semanticSearch: async (query: string): Promise<SemanticSearchResponse> => {
+    return await fetcher<SemanticSearchResponse>('/api/search/semantic', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
     })
   },
 }

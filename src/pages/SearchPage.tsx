@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
-import { Search } from 'lucide-react'
+import { Search, ScanText } from 'lucide-react'
 import CameraView from '@/components/CameraView'
 import LoadingDots from '@/components/LoadingDots'
 import { useTTS } from '@/hooks/useTTS'
@@ -90,16 +90,28 @@ export default function SearchPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <span className={styles.searchHint}>Buscar producto</span>
-          <motion.button
-            className={styles.searchButton}
-            onClick={handleSearch}
-            disabled={isLoading}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          >
-            <Search size={28} />
-          </motion.button>
+          <div className={styles.buttonRow}>
+            <motion.button
+              className={styles.textSearchButton}
+              onClick={() => navigate('/search-text')}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+              <ScanText size={20} />
+              <span>Buscar por nombre</span>
+            </motion.button>
+            <motion.button
+              className={styles.searchButton}
+              onClick={handleSearch}
+              disabled={isLoading}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+              <Search size={28} />
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     </div>

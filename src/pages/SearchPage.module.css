@@ -56,6 +56,36 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
 
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.textSearchButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  color: #ffffff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.textSearchButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
 .searchButton {
   width: clamp(56px, 12vw, 64px);
   height: clamp(56px, 12vw, 64px);

@@ -42,3 +42,19 @@ export interface ApiResponse<T> {
 export type GlassVariant = 'primary' | 'secondary' | 'danger'
 
 export type ButtonSize = 'sm' | 'md' | 'lg'
+
+export interface SemanticSearchResult {
+  id: string
+  barcode: string
+  name: string
+  brand: string | null
+  category: string | null
+  presentation: string | null
+  unit: string | null
+  stock: number
+  score: number
+}
+
+export interface SemanticSearchResponse {
+  results: SemanticSearchResult[]
+}
