@@ -1,5 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from uuid import UUID
+from pydantic import BaseModel, Field, model_validator
 
 
 class ProductCreate(BaseModel):
@@ -24,6 +25,13 @@ class ProductResponse(BaseModel):
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
+    @model_validator(mode="before")
+    @classmethod
+    def convert_uuids(cls, data):
+        if hasattr(data, "__dict__"):
+            data = {k: str(v) if isinstance(v, UUID) else v for k, v in data.__dict__.items() if not k.startswith("_")}
+        return data
+
 
 class MovementCreate(BaseModel):
     productId: str = Field(..., alias="product_id")
@@ -41,6 +49,13 @@ class MovementResponse(BaseModel):
     createdAt: datetime = Field(..., alias="created_at")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_uuids(cls, data):
+        if hasattr(data, "__dict__"):
+            data = {k: str(v) if isinstance(v, UUID) else v for k, v in data.__dict__.items() if not k.startswith("_")}
+        return data
 
 
 class ApiResponse(BaseModel):
