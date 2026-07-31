@@ -24,8 +24,8 @@
 }
 
 @keyframes waveBar {
-  0%, 100% { height: 6px; }
-  50% { height: 28px; }
+  0%, 100% { height: 4px; }
+  50% { height: 20px; }
 }
 
 @keyframes dotBounce {

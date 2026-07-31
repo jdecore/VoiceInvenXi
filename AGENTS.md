@@ -42,7 +42,7 @@ La app es full-screen y se adapta a cualquier dispositivo:
 src/
 ├── main.tsx                    # Entry point, renderiza App en StrictMode
 ├── App.tsx                     # BrowserRouter + PhoneFrame + lazy routes
-├── vite-env.d.ts               # Tipos globales (CSS Modules, SpeechRecognition)
+├── vite-env.d.ts               # Tipos globales (CSS Modules, SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
 ├── api.ts                      # Fetcher genérico + productApi + movementApi
@@ -56,13 +56,8 @@ src/
 │
 ├── hooks/
 │   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
-<<<<<<< HEAD
-│   ├── useSTT.ts               # Speech-to-Text con ElevenLabs via MediaRecorder
-│   ├── useTTS.ts               # Text-to-Speech con ElevenLabs (lee en voz alta)
-=======
-│   ├── useSTT.ts               # STT: ElevenLabs via MediaRecorder con fallback a Web Speech API
-│   ├── useTTS.ts               # TTS: ElevenLabs (lee en voz alta) con fallback a speechSynthesis
->>>>>>> 7b02330 (readme)
+│   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback. Incluye error handling, timeout de 15s, y estado `error`
+│   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
 ├── components/                 # 11 componentes reutilizables
@@ -80,16 +75,10 @@ src/
 │   ├── LoadingDots.tsx         # 3 puntos que rebotan + texto
 │   └── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px)
 │
-└── pages/                      # 3 pantallas lazy-loaded con TTS
-<<<<<<< HEAD
-    ├── SearchPage.tsx          # Ruta: / – TTS al escanear "Buscando producto"
-    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto + confirma movimiento
-    └── NewProductPage.tsx      # Ruta: /new/:barcode – TTS guía llenado + confirma guardado
-=======
-    ├── SearchPage.tsx          # Ruta: / – TTS bienvenida "Apunta la cámara al código de barras" + escaneo
-    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto, si no existe redirige a /new/:barcode
-    └── NewProductPage.tsx      # Ruta: /new/:barcode – Formulario con STX por campo + TTS al guardar
->>>>>>> 7b02330 (readme)
+└── pages/                      # 3 pantallas lazy-loaded
+    ├── SearchPage.tsx          # Ruta: / – TTS bienvenida + escaneo de cámara
+    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto con delay de 2s en confirmación, si no existe redirige a /new/:barcode
+    └── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard paso a paso (5 pasos) con STT por campo + TTS al guardar
 ```
 
 ---
@@ -98,13 +87,23 @@ src/
 
 ```
 /                    → SearchPage (cámara + botón búsqueda + TTS "Apunta la cámara al código de barras")
-/product/:barcode    → ProductPage (producto encontrado → registrar movimiento)
+/product/:barcode    → ProductPage (producto encontrado → registrar movimiento por voz)
                     → si no existe → redirige automáticamente a /new/:barcode
-/new/:barcode        → NewProductPage (formulario con STT para llenar campos + guardar)
+/new/:barcode        → NewProductPage (wizard de 5 pasos: Nombre → Marca → Categoría → Presentación → Unidad)
 ```
 
 ### Nota sobre producto no encontrado
 Cuando `ProductPage` recibe un 404 del backend (o el producto no está en mock data), redirige automáticamente a `/new/:barcode` con `{ replace: true }`. No muestra mensaje estático de "no encontrado".
+
+### NewProductPage - Wizard
+El formulario de creación de producto usa un wizard de 5 pasos con transiciones animadas (fade + slide):
+- **Paso 1**: Nombre del producto (requerido)
+- **Paso 2**: Marca
+- **Paso 3**: Categoría
+- **Paso 4**: Presentación
+- **Paso 5**: Unidad de Medida
+
+Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los campos opcionales se auto-avanzan después de 600ms al recibir input de voz.
 
 ---
 
@@ -408,12 +407,10 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 ## Tech Debt / Known Issues
 
 1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
-<<<<<<< HEAD
-2. **ElevenLabs integrado**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) reemplazan a la Web Speech API. Funciona en cualquier navegador moderno. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
-=======
 2. **ElevenLabs + fallback Web Speech**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) intentan ElevenLabs vía backend proxy. Si falla (desarrollo sin backend), caen automáticamente a `speechSynthesis` y `SpeechRecognition` nativos del navegador. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
->>>>>>> 7b02330 (readme)
-3. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
-4. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
-5. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-6. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.
+3. **STT error handling**: `useSTT` expone un estado `error` con mensajes como "Permiso de micrófono denegado", "No se detectó voz", "Tiempo de espera agotado". Timeout de 15s en Web Speech API.
+4. **Audio de confirmación con delay**: En `ProductPage`, el TTS de confirmación se reproduce con 2s de delay después del overlay de éxito.
+5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
+6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
+7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
+8. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.

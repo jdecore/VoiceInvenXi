@@ -3,13 +3,13 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 40px;
+  height: 28px;
   padding: 0 var(--space-md);
 }
 
 .bar {
   width: 3px;
-  min-height: 6px;
+  min-height: 4px;
   border-radius: 2px;
   background: var(--color-accent);
   animation: waveBar 0.8s ease-in-out infinite;
@@ -23,6 +23,6 @@
 
 .inactive .bar {
   animation: none;
-  height: 6px;
+  height: 4px;
   opacity: 0.3;
 }

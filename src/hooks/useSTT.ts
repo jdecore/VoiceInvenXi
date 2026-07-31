@@ -13,7 +13,7 @@ interface UseSTT {
 }
 
 const MAX_RECORDING_MS = 10_000
-const WEB_SPEECH_TIMEOUT_MS = 15_000
+const WEB_SPEECH_TIMEOUT_MS = 10_000
 
 function nextTick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 10))
@@ -233,15 +233,17 @@ export function useSTT(): UseSTT {
     setInterimTranscript('')
     setError(null)
 
+    isListeningRef.current = true
+
     if (hasWebSpeech) {
       const started = startWebSpeech()
-      if (started) {
-        isListeningRef.current = true
+      if (!started) {
+        isListeningRef.current = false
       }
     } else if (hasMediaRecorder) {
       const started = await startElevenLabs()
-      if (started) {
-        isListeningRef.current = true
+      if (!started) {
+        isListeningRef.current = false
       }
     }
   }, [isSupported, hasWebSpeech, hasMediaRecorder, cleanup, startWebSpeech, startElevenLabs])

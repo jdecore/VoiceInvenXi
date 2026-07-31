@@ -1,7 +1,7 @@
 .micButton {
   position: relative;
-  width: 72px;
-  height: 72px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -29,25 +29,9 @@
 .listening {
   background: rgba(255, 90, 95, 0.2);
   border-color: rgba(255, 90, 95, 0.5);
-  animation: glowPulse 1.5s ease-in-out infinite;
-  --glow-color: rgba(255, 90, 95, 0.4);
-}
-
-.listening::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 90, 95, 0.3);
-  animation: ripple 1.2s ease-out infinite;
 }
 
 .disabled {
   opacity: 0.35;
   pointer-events: none;
-}
-
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(255, 90, 95, 0.2); }
-  50% { box-shadow: 0 0 40px rgba(255, 90, 95, 0.5); }
 }
