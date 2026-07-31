@@ -188,6 +188,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-sm);
+  margin-top: auto;
 }
 
 .micLabel {
