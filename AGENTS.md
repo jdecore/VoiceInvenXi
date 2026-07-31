@@ -284,18 +284,21 @@ interface ApiResponse<T> {
 
 ## Backend (FastAPI) - Guía de Implementación
 
-### Estructura Recomendada
+### Estructura
 ```
 backend/
-├── main.py                 # FastAPI app, CORS, routers
-├── database.py             # SQLAlchemy + connection pool (statement_cache_size=0 para pgbouncer)
-├── models.py               # SQLAlchemy models
-├── schemas.py              # Pydantic schemas
+├── main.py                 # FastAPI app, CORS, startup (create_all con try/except), routers
+├── database.py             # SQLAlchemy async + asyncpg (load_dotenv, ssl=require, statement_cache_size=0)
+├── models.py               # SQLAlchemy models (PG_UUID para columnas id/product_id)
+├── schemas.py              # Pydantic schemas (model_validator para convertir UUID→str)
 ├── routers/
 │   ├── products.py         # GET /api/products/:barcode, POST /api/products
 │   ├── movements.py        # POST /api/movements
 │   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
-└── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart
+├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv
+├── init.sql                # Script completo: tablas + 32 productos + movimientos (pegar en Supabase SQL Editor)
+├── setup.sql               # Solo tablas (sin datos)
+└── seed.sql                # Solo datos (después de setup.sql)
 ```
 
 ### CORS
@@ -341,6 +344,31 @@ CREATE INDEX idx_movements_product_id ON movements(product_id);
 Cuando se crea un movimiento:
 - Si `type = 'in'`: `UPDATE products SET stock = stock + quantity WHERE id = product_id`
 - Si `type = 'out'`: `UPDATE products SET stock = stock - quantity WHERE id = product_id` (validar que stock >= 0)
+
+### Guía de Debugging Backend
+
+Cuando el backend falla con 500, seguir este checklist:
+
+1. **Probar `/api/health`** — Si falla, el backend no arrancó (error de deploy o startup).
+2. **Probar raw SQL** — Si `/api/health` funciona pero los endpoints de negocio fallan, puede ser:
+   - **Conexión a DB**: La causa más común es que falta `ssl="require"` en `connect_args` de asyncpg. Supabase pooler (port 6543) exige SSL.
+   - **`create_all` fallando**: El pooler de Supabase no soporta DDL en transacciones. Envolver en `try/except`.
+3. **Tipo UUID vs String** — Si el POST falla con `column "id" is of type uuid but expression is of type character varying`:
+   - El modelo SQLAlchemy usa `String` para el `id` pero la DB tiene `UUID`. Usar `PG_UUID(as_uuid=False)` de `sqlalchemy.dialects.postgresql`.
+4. **Pydantic ValidationError** — Si el GET falla con `Input should be a valid string, input_value=UUID(...)`:
+   - SQLAlchemy retorna objetos `UUID` de PostgreSQL. Agregar `model_validator(mode="before")` en los schemas Pydantic que convierta `UUID → str`.
+5. **DATABASE_URL** — En Render, la variable de entorno `DATABASE_URL` debe estar configurada en el dashboard (no en `.env`, que está en `.gitignore`). El `.env` es solo para desarrollo local.
+
+**Patrón de error típico y solución:**
+```
+Error: column "id" is of type uuid but expression is of type character varying
+→ Causa: models.py usa String para id, DB tiene UUID
+→ Fix: _id_type = PG_UUID(as_uuid=False) if IS_POSTGRES else String
+
+Error: Input should be a valid string [type=string_type, input_value=UUID('...')]
+→ Causa: Pydantic espera str pero recibe objeto UUID
+→ Fix: Agregar @model_validator(mode="before") que convierta UUID→str
+```
 
 ---
 

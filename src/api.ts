@@ -4,7 +4,7 @@ import type { ApiResponse, Product } from './types'
 async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 15000)
+  const timeout = setTimeout(() => controller.abort(), 60000)
 
   const response = await fetch(url, {
     ...options,

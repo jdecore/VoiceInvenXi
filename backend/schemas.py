@@ -21,7 +21,7 @@ class ProductResponse(BaseModel):
     presentation: str | None
     unit: str | None
     stock: int
-    imageUrl: str | None = Field(None, alias="image_url")
+    imageUrl: str | None = Field(None, alias="image_url", serialization_alias="imageUrl")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
