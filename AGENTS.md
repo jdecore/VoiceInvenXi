@@ -49,14 +49,14 @@ src/
 │
 ├── styles/
 │   ├── globals.css             # CSS custom properties (tokens), reset, font Inter
-│   └── animations.css          # @keyframes compartidos (pulse, ripple, scanLine, etc.)
+│   └── animations.css          # @keyframes compartidos (pulse, ripple, scanLine, waveBar: 4px-24px, etc.)
 │
 ├── lib/
 │   └── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
 │
 ├── hooks/
 │   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
-│   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback. Incluye error handling, timeout de 15s, y estado `error`
+│   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback. Incluye error handling, timeout de 10s, y estado `error`
 │   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
@@ -65,12 +65,12 @@ src/
 │   ├── GlassButton.tsx         # Botón pill, variants: primary, secondary, danger; sizes: sm, md, lg
 │   ├── GlassInput.tsx          # Input con label, icono, error state
 │   ├── GlassIconButton.tsx     # Botón circular glass puro
-│   ├── MicButton.tsx           # Botón de micrófono con estado listening
+│   ├── MicButton.tsx           # Botón de micrófono con estado listening (80px en NewProductPage, 50px por defecto, sin animación ripple)
 │   ├── CameraView.tsx          # Video feed + overlay de escaneo con corners animados
 │   ├── ProductImage.tsx        # Imagen con placeholder (Package icon)
 │   ├── Barcode.tsx             # Display de código de barras en pill
 │   ├── StockBadge.tsx          # Badge color-coded: low (rojo), medium (amarillo), high (verde)
-│   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz
+│   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz (32px height, 4px width bars)
 │   ├── SuccessCheck.tsx        # Overlay con check verde animado + ripple + mensaje
 │   ├── LoadingDots.tsx         # 3 puntos que rebotan + texto
 │   └── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px)
@@ -78,7 +78,7 @@ src/
 └── pages/                      # 3 pantallas lazy-loaded
     ├── SearchPage.tsx          # Ruta: / – TTS bienvenida + escaneo de cámara
     ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto con delay de 2s en confirmación, si no existe redirige a /new/:barcode
-    └── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard paso a paso (5 pasos) con STT por campo + TTS al guardar
+    └── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard paso a paso (5 pasos) con STT por campo + TTS al guardar. Botón mic 80px, voice wave 32px
 ```
 
 ---
@@ -408,7 +408,7 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 
 1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
 2. **ElevenLabs + fallback Web Speech**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) intentan ElevenLabs vía backend proxy. Si falla (desarrollo sin backend), caen automáticamente a `speechSynthesis` y `SpeechRecognition` nativos del navegador. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
-3. **STT error handling**: `useSTT` expone un estado `error` con mensajes como "Permiso de micrófono denegado", "No se detectó voz", "Tiempo de espera agotado". Timeout de 15s en Web Speech API.
+3. **STT error handling**: `useSTT` expone un estado `error` con mensajes como "Permiso de micrófono denegado", "No se detectó voz", "Tiempo de espera agotado". Timeout de 10s en Web Speech API.
 4. **Audio de confirmación con delay**: En `ProductPage`, el TTS de confirmación se reproduce con 2s de delay después del overlay de éxito.
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
