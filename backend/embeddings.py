@@ -3,8 +3,8 @@ import httpx
 
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 COHERE_API_URL = "https://api.cohere.ai/v1/embed"
-MODEL = "embed-multilingual-light-v3.0"
-DIMENSIONS = 384
+MODEL = "embed-multilingual-v3.0"
+DIMENSIONS = 1024
 
 
 async def get_embedding(text: str) -> list[float]:
