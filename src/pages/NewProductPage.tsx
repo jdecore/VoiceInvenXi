@@ -153,9 +153,10 @@ export default function NewProductPage() {
       })
       setShowSuccess(true)
       speakText('Producto registrado correctamente')
-    } catch {
-      setValidationError('Error al guardar el producto')
-      speakText('Error al guardar el producto')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar el producto'
+      setValidationError(msg)
+      speakText(msg)
     } finally {
       setIsSaving(false)
     }

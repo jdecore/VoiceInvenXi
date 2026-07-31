@@ -80,8 +80,8 @@ export default function ProductPage() {
               }
             : prev
         )
-      } catch {
-        // Silently handle API errors for now
+      } catch (err) {
+        console.error('Error registrando movimiento:', err)
       }
 
       setAddedQty(qty)

@@ -18,8 +18,9 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
   clearTimeout(timeout)
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error de red' }))
-    throw new Error(error.message || `HTTP ${response.status}`)
+    const body = await response.json().catch(() => ({}))
+    const msg = body?.detail?.message || (typeof body?.detail === 'string' ? body.detail : null) || body?.message
+    throw new Error(msg || `Error HTTP ${response.status}`)
   }
 
   const result: ApiResponse<T> = await response.json()
