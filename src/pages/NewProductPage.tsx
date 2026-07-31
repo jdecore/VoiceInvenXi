@@ -247,7 +247,7 @@ export default function NewProductPage() {
                     <MicButton
                       isListening={isListening}
                       onClick={handleMicPress}
-                      size={32}
+                      size={40}
                     />
                     <VoiceWave active={isListening} />
                     <span className={`${styles.micLabel} ${isListening ? styles.micLabelActive : ''}`}>
