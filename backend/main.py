@@ -34,12 +34,38 @@ async def health():
 @app.get("/api/debug")
 async def debug():
     import traceback
+    import sqlalchemy
     from database import engine
     try:
         async with engine.connect() as conn:
             result = await conn.execute(
-                __import__('sqlalchemy').text("SELECT 1")
+                sqlalchemy.text("SELECT 1")
             )
-            return {"db": "ok", "result": result.scalar()}
+            # Check if products table exists
+            tables = await conn.execute(
+                sqlalchemy.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            )
+            table_list = [r[0] for r in tables]
+            return {"db": "ok", "tables": table_list}
     except Exception as e:
         return {"db": "error", "type": type(e).__name__, "message": str(e), "traceback": traceback.format_exc()}
+
+
+@app.get("/api/debug/{barcode}")
+async def debug_product(barcode: str):
+    import traceback
+    import sqlalchemy
+    from database import engine
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(
+                sqlalchemy.text("SELECT * FROM products WHERE barcode = :barcode"),
+                {"barcode": barcode}
+            )
+            row = result.mappings().first()
+            if row:
+                return {"found": True, "product": dict(row)}
+            else:
+                return {"found": False}
+    except Exception as e:
+        return {"error": type(e).__name__, "message": str(e), "traceback": traceback.format_exc()}
