@@ -29,3 +29,17 @@ async def startup():
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/debug")
+async def debug():
+    import traceback
+    from database import engine
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(
+                __import__('sqlalchemy').text("SELECT 1")
+            )
+            return {"db": "ok", "result": result.scalar()}
+    except Exception as e:
+        return {"db": "error", "type": type(e).__name__, "message": str(e), "traceback": traceback.format_exc()}
