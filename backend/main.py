@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import text
-from database import engine, Base, async_session
+from database import engine, Base
 from routers import products, movements, elevenlabs
 
 app = FastAPI(title="VoiceInvenXi API", version="1.0.0")
@@ -13,21 +12,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    import traceback
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": {
-                "message": str(exc),
-                "type": type(exc).__name__,
-                "path": str(request.url),
-            }
-        },
-    )
 
 app.include_router(products.router)
 app.include_router(movements.router)
@@ -46,51 +30,3 @@ async def startup():
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
-
-
-@app.get("/api/debug")
-async def debug():
-    import traceback
-    import sqlalchemy
-    from database import engine
-    try:
-        async with engine.connect() as conn:
-            result = await conn.execute(
-                sqlalchemy.text("SELECT 1")
-            )
-            # Check if products table exists
-            tables = await conn.execute(
-                sqlalchemy.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-            )
-            table_list = [r[0] for r in tables]
-            return {"db": "ok", "tables": table_list}
-    except Exception as e:
-        return {"db": "error", "type": type(e).__name__, "message": str(e), "traceback": traceback.format_exc()}
-
-
-@app.get("/api/debug/{barcode}")
-async def debug_product(barcode: str):
-    import traceback
-    from sqlalchemy import select
-    from database import async_session
-    from models import Product
-    results = {}
-    try:
-        async with engine.connect() as conn:
-            import sqlalchemy
-            r = await conn.execute(
-                sqlalchemy.text("SELECT * FROM products WHERE barcode = :barcode"),
-                {"barcode": barcode}
-            )
-            row = r.mappings().first()
-            results["raw_sql"] = dict(row) if row else None
-    except Exception as e:
-        results["raw_sql"] = {"error": str(e)}
-    try:
-        async with async_session() as session:
-            result = await session.execute(select(Product).where(Product.barcode == barcode))
-            product = result.scalar_one_or_none()
-            results["orm"] = {"found": product is not None, "product": str(product) if product else None}
-    except Exception as e:
-        results["orm"] = {"error": str(e), "type": type(e).__name__, "traceback": traceback.format_exc()}
-    return results
