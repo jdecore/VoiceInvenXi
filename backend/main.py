@@ -19,6 +19,14 @@ app.include_router(elevenlabs.router)
 app.include_router(search.router)
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"success": False, "message": str(exc) or "Error interno del servidor"},
+    )
+
+
 @app.on_event("startup")
 async def startup():
     try:

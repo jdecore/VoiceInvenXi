@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,15 +32,18 @@ class SearchResponse(BaseModel):
 
 @router.post("/semantic", response_model=SearchResponse)
 async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)):
-    query_vector = await get_query_embedding(req.query)
+    try:
+        query_vector = await get_query_embedding(req.query)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
 
     sql = text("""
         SELECT id, barcode, name, brand, category, presentation, unit, stock,
-               1 - (embedding <=> :query_vector::vector) AS similarity
+               1 - (embedding <=> CAST(:query_vector AS vector)) AS similarity
         FROM products
         WHERE embedding IS NOT NULL
-        ORDER BY embedding <=> :query_vector::vector
+        ORDER BY embedding <=> CAST(:query_vector AS vector)
         LIMIT 5
     """)
 

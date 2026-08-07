@@ -35,7 +35,7 @@ class Product(Base):
     unit: Mapped[str | None] = mapped_column(String(50), nullable=True)
     stock: Mapped[int] = mapped_column(Integer, default=0)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    embedding = Column(Vector(384), nullable=True) if HAS_VECTOR else None
+    embedding = Column(Vector(1024), nullable=True) if HAS_VECTOR else None
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
