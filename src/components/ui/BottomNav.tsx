@@ -36,7 +36,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="flex items-center justify-around px-2 pt-2 pb-1">
+    <nav className="flex items-center justify-between gap-1 px-2 pt-2 pb-1">
       {NAV_ITEMS.map((item) => {
         const active = isActive(item.path)
         return (
@@ -44,8 +44,8 @@ export function BottomNav() {
             key={item.path}
             onClick={() => handleNav(item.path)}
             className={`
-              flex flex-col items-center gap-1 px-3 py-1.5
-              rounded-xl min-w-[56px]
+              flex flex-col items-center gap-1 px-2 py-1.5
+              rounded-xl min-w-[48px]
               transition-all duration-200
               ${active
                 ? 'text-[#4F8CFF] bg-[#4F8CFF]/15'
