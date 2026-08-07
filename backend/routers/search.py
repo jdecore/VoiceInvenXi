@@ -38,16 +38,16 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=400, detail=str(e))
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
 
-    sql = text("""
+    sql = text(f"""
         SELECT id, barcode, name, brand, category, presentation, unit, stock,
-               1 - (embedding <=> CAST(:query_vector AS vector)) AS similarity
+               1 - (embedding <=> '{vector_str}'::vector) AS similarity
         FROM products
         WHERE embedding IS NOT NULL
-        ORDER BY embedding <=> CAST(:query_vector AS vector)
+        ORDER BY embedding <=> '{vector_str}'::vector
         LIMIT 5
     """)
 
-    result = await db.execute(sql, {"query_vector": vector_str})
+    result = await db.execute(sql)
     rows = result.fetchall()
 
     results = []
@@ -87,8 +87,7 @@ async def seed_embeddings(db: AsyncSession = Depends(get_db)):
             embedding = await get_embedding(text_content)
             vector_str = "[" + ",".join(str(v) for v in embedding) + "]"
             await db.execute(
-                text("UPDATE products SET embedding = :vec::vector WHERE id = :pid"),
-                {"vec": vector_str, "pid": product.id},
+                text(f"UPDATE products SET embedding = '{vector_str}'::vector WHERE id = '{product.id}'"),
             )
             updated += 1
         except Exception as e:
