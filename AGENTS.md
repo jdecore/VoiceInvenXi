@@ -330,28 +330,30 @@ interface ApiResponse<T> {
 ### Estructura
 ```
 backend/
-├── main.py                 # FastAPI app, CORS, startup (create_all con try/except), routers
+├── main.py                 # FastAPI app, lifespan context manager, CORS configurable, health check con DB
 ├── database.py             # SQLAlchemy async + asyncpg (load_dotenv, ssl=require, statement_cache_size=0)
 ├── models.py               # SQLAlchemy models (PG_UUID para columnas id/product_id, Vector(1024) embedding)
 ├── schemas.py              # Pydantic schemas (model_validator para convertir UUID→str)
-├── embeddings.py           # Cohere (primario) + Jina (fallback) para embeddings vectoriales
+├── embeddings.py           # Cohere (primario) + Jina (fallback), batch embeddings (96 texts/request)
 ├── routers/
 │   ├── products.py         # GET /api/products/:barcode, POST /api/products
 │   ├── movements.py        # POST /api/movements
-│   ├── search.py           # POST /api/search/semantic, POST /api/search/seed-embeddings
+│   ├── search.py           # POST /api/search/semantic (queries parametrizadas), POST /api/search/seed-embeddings (batch)
 │   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
 ├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv, pgvector, cohere
-├── init.sql                # Script completo: tablas + 32 productos + movimientos (pegar en Supabase SQL Editor)
-├── setup.sql               # Solo tablas (sin datos)
-└── seed.sql                # Solo datos (después de setup.sql)
+├── init.sql                # Script completo: tablas (con embedding + HNSW index) + 32 productos + movimientos (pegar en Supabase SQL Editor)
+├── setup.sql               # Solo tablas (con embedding + HNSW index, sin datos)
+├── seed.sql                # Solo datos (después de setup.sql)
+└── .env.example            # Template con todas las variables de entorno requeridas
 ```
 
 ### CORS
-El frontend se ejecuta en origen diferente. **NO usar wildcards como `*.vercel.app`** — FastAPI's `CORSMiddleware` hace match exacto y no soporta glob patterns. Usar `["*"]`:
+El frontend se ejecuta en origen diferente. Configurar via variable de entorno `CORS_ORIGINS` (comma-separated). Default: `*`:
 ```python
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -369,6 +371,7 @@ CREATE TABLE products (
   unit VARCHAR(50),
   stock INTEGER DEFAULT 0,
   image_url TEXT,
+  embedding vector(1024),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -383,6 +386,7 @@ CREATE TABLE movements (
 
 CREATE INDEX idx_products_barcode ON products(barcode);
 CREATE INDEX idx_movements_product_id ON movements(product_id);
+CREATE INDEX idx_products_embedding ON products USING hnsw (embedding vector_cosine_ops);
 ```
 
 ### Lógica de Movimiento
@@ -394,7 +398,7 @@ Cuando se crea un movimiento:
 
 Cuando el backend falla con 500, seguir este checklist:
 
-1. **Probar `/api/health`** — Si falla, el backend no arrancó (error de deploy o startup).
+1. **Probar `/api/health`** — Si falla, el backend no arrancó (error de deploy o startup). El health check ahora verifica conexión a DB con `SELECT 1`.
 2. **Probar raw SQL** — Si `/api/health` funciona pero los endpoints de negocio fallan, puede ser:
    - **Conexión a DB**: La causa más común es que falta `ssl="require"` en `connect_args` de asyncpg. Supabase pooler (port 6543) exige SSL.
    - **`create_all` fallando**: El pooler de Supabase no soporta DDL en transacciones. Envolver en `try/except`.
@@ -426,12 +430,11 @@ VITE_API_URL=https://voiceinvenoxi-api.onrender.com
 
 ### Backend (Render)
 ```
-DATABASE_URL=postgresql://user:pass@host:5432/voiceinvenoxi
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=eyJ...
-ELEVENLABS_API_KEY=sk_...
-COHERE_API_KEY=...
-JINA_API_KEY=...
+DATABASE_URL=postgresql://user:pass@host:6543/postgres
+ELEVENLABS_API_KEY=sk_...         # Optional - falls back to browser native APIs
+COHERE_API_KEY=...               # Optional - for semantic search embeddings
+JINA_API_KEY=...                 # Optional - fallback for embeddings
+CORS_ORIGINS=https://app.vercel.app  # Optional - default: *
 ```
 
 ---
