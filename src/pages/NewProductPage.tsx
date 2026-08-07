@@ -180,7 +180,7 @@ export function NewProductPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={step.key}

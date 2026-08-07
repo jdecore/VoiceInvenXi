@@ -125,7 +125,7 @@ export function ProductPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
         {/* Product image placeholder */}
         <div className="relative w-full h-40 rounded-2xl bg-white/[0.04] border border-white/[0.08] overflow-hidden flex items-center justify-center">
           {product.imageUrl ? (

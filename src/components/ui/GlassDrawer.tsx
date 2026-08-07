@@ -10,6 +10,7 @@ export function GlassDrawer({ children, className = '' }: GlassDrawerProps) {
     <div
       className={`
         relative z-40 mt-auto
+        min-h-[120px]
         bg-[rgba(18,18,26,0.92)] backdrop-blur-xl backdrop-saturate-[180%]
         border-t border-[rgba(255,255,255,0.12)]
         rounded-t-[28px] shadow-[0_-8px_32px_rgba(0,0,0,0.4)]

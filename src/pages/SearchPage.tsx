@@ -70,16 +70,14 @@ export function SearchPage() {
       </div>
 
       {/* Search bar */}
-      <div className="px-4 pb-3">
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          onVoiceClick={() => isSupported && start()}
-          onSearch={handleSearch}
-          isListening={isListening}
-          placeholder="Describe lo que buscas..."
-        />
-      </div>
+      <SearchBar
+        value={query}
+        onChange={setQuery}
+        onVoiceClick={() => isSupported && start()}
+        onSearch={handleSearch}
+        isListening={isListening}
+        placeholder="Describe lo que buscas..."
+      />
 
       {/* Voice feedback */}
       {isListening && (
@@ -99,7 +97,7 @@ export function SearchPage() {
       )}
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (

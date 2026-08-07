@@ -32,7 +32,7 @@ export function CameraOverlay({ isActive = true }: CameraOverlayProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       {/* Main scan area */}
-      <div className="relative w-[260px] h-[260px]">
+      <div className="relative w-[70vw] h-[70vw] max-w-[260px] max-h-[260px]">
         {/* Corner markers */}
         <div className="absolute top-0 left-0 w-16 h-16 border-l-[3px] border-t-[3px] border-[#2ECC71] rounded-tl-lg" />
         <div className="absolute top-0 right-0 w-16 h-16 border-r-[3px] border-t-[3px] border-[#2ECC71] rounded-tr-lg" />
