@@ -41,7 +41,8 @@ La app es full-screen y se adapta a cualquier dispositivo:
 ```
 src/
 ├── main.tsx                    # Entry point, renderiza App en StrictMode
-├── App.tsx                     # BrowserRouter + PhoneFrame + lazy routes
+├── App.tsx                     # Splash + ToastProvider + ErrorBoundary + capa ambiente, BrowserRouter + PhoneFrame + lazy routes
+├── App.module.css               # Capa ambiente (blobs animados detrás del PhoneFrame)
 ├── vite-env.d.ts               # Tipos globales (CSS Modules, SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
@@ -52,15 +53,17 @@ src/
 │   └── animations.css          # @keyframes compartidos (pulse, ripple, scanLine, waveBar: 4px-24px, etc.)
 │
 ├── lib/
-│   └── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
+│   ├── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
+│   └── haptics.ts              # Wrapper de navigator.vibrate (feature-check, no-op en desktop/https-fail)
 │
 ├── hooks/
 │   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
 │   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback. Incluye error handling, timeout de 10s, y estado `error`
 │   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
+│   ├── useToast.ts             # Contexto + hook useToast() para el sistema de toasts (ToastProvider)
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
-├── components/                 # 11 componentes reutilizables
+├── components/                 # 18 componentes reutilizables
 │   ├── GlassCard.tsx           # Card glassmorphism, variants: elevated, interactive, compact
 │   ├── GlassButton.tsx         # Botón pill, variants: primary, secondary, danger; sizes: sm, md, lg
 │   ├── GlassInput.tsx          # Input con label, icono, error state
@@ -70,10 +73,15 @@ src/
 │   ├── ProductImage.tsx        # Imagen con placeholder (Package icon)
 │   ├── Barcode.tsx             # Display de código de barras en pill
 │   ├── StockBadge.tsx          # Badge color-coded: low (rojo), medium (amarillo), high (verde)
-│   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz (32px height, 4px width bars)
-│   ├── SuccessCheck.tsx        # Overlay con check verde animado + ripple + mensaje
+│   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz (32px height, 4px width bars). aria-hidden
+│   ├── SuccessCheck.tsx        # Overlay con check verde animado + ripple + particle burst + haptic. Reusa estética de ripple/pulse
 │   ├── LoadingDots.tsx         # 3 puntos que rebotan + texto
-│   └── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px)
+│   ├── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px). Fondo transparente para que el ambiente se vea
+│   ├── Toast.tsx               # Provider de toasts glass (context), apilados, icono, auto-dismiss, motion, aria-live="polite"
+│   ├── SplashScreen.tsx        # Intro de marca (logo + glow) con motion, una sola vez al cargar (~1.3s), respeta prefers-reduced-motion
+│   ├── Skeleton.tsx            # Skeleton loaders reutilizando el @keyframes shimmer existente
+│   ├── EmptyState.tsx          # Estado vacío reutilizable (icono lucide + título + subtítulo)
+│   └── ErrorBoundary.tsx       # Class error boundary con fallback glass + botón "Reintentar" (window.location.reload)
 │
 └── pages/                      # 3 pantallas lazy-loaded
     ├── SearchPage.tsx          # Ruta: / – TTS bienvenida + escaneo de cámara
@@ -104,6 +112,45 @@ El formulario de creación de producto usa un wizard de 5 pasos con transiciones
 - **Paso 5**: Unidad de Medida
 
 Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los campos opcionales se auto-avanzan después de 600ms al recibir input de voz.
+
+---
+
+## Capa de Pulido Visual / UX
+
+Capa de presentación "pro" sobre el frontend existente. **No añade dependencias** (usa `motion`, `lucide-react`, CSS Modules y APIs nativas del navegador: `navigator.vibrate`, Web Audio ya usado, `prefers-reduced-motion`).
+
+### Fondo ambiente (profundidad)
+- `src/App.module.css` define una capa fija `.ambient` (detrás del `PhoneFrame`) con 3 "blobs"/aurora animados vía `@keyframes` (CSS `transform`/`opacity`). Respeta `prefers-reduced-motion` (degrada a estático, sin animar).
+- `PhoneFrame`, `CameraView`, y los `.page` de `SearchPage`/`ProductPage`/`NewProductPage` tienen `background: transparent` para que los blobs se vean (mobile full-screen y desktop). El `CameraView` usa fallback de "cámara no disponible" translúcido para que el ambiente asome en desktop.
+
+### Splash / intro de marca
+- `src/components/SplashScreen.tsx`: logo + glow con `motion`, una sola vez al cargar (~1.3s) vía `setTimeout`, luego `AnimatePresence` lo funde. Con `prefers-reduced-motion` dura ~250ms y no anima.
+
+### Sistema de Toasts
+- `src/components/Toast.tsx` + `src/hooks/useToast.ts`: `ToastProvider` (context) + `useToast()`. Toasts glass apilados, icono (check/alert/info), auto-dismiss, animación `motion`, `aria-live="polite"`.
+- Migrado desde errores inline: `NewProductPage` (mantiene TTS dual: toast + habla el error) y `SearchPageText` (error de búsqueda → toast). `LoadingDots` se mantiene para loaders inline cortos.
+
+### Skeleton loaders
+- `src/components/Skeleton.tsx` reusa el `@keyframes shimmer` **ya existente** (no lo redefine). Usado en `ProductPage` (`isLoading`) y `SearchPageText` (resultados cargando).
+
+### Feedback háptico
+- `src/lib/haptics.ts`: wrapper de `navigator.vibrate(...)` con feature-check (`'vibrate' in navigator`) y no-op en desktop/https-fail. Usado en `CameraView.playScanBeep` (al escanear), `MicButton` (toggle), y `SuccessCheck` (al éxito, patrón `hapticSuccess`).
+
+### Error Boundary
+- `src/components/ErrorBoundary.tsx` (clase) con fallback glass + botón "Reintentar" (`window.location.reload()`). Envuelve el `BrowserRouter` en `App.tsx`.
+
+### Accesibilidad
+- `globals.css` añade `:focus-visible` global (outline con token de acento) para `MicButton`, `GlassIconButton` y botones crudos de páginas (GlassButton ya lo cubre vía `focusVisible`).
+- `VoiceWave` lleva `aria-hidden="true"`. Toasts `aria-live`. Animaciones JS (`Splash`, `Toast`, `SuccessCheck`) usan `useReducedMotion()` de `motion/react` para saltar/acortar motion cuando está activo (el bloque CSS `prefers-reduced-motion` solo anula animaciones CSS, no las de `motion`).
+
+### Momento de éxito
+- `SuccessCheck`: agrega "particle burst" ligero con `motion` (6 partículas) + haptic. Reusa estética de `ripple`/`pulse`. Sin librerías.
+
+### Empty states
+- `src/components/EmptyState.tsx` (icono lucide + título + subtítulo). Refactoriza el empty state inline de `SearchPageText`.
+
+### PWA manifest
+- `public/manifest.webmanifest` apunta a `public/favicon.svg` y `public/icons.svg` ya existentes (sin service worker, respeta "sin offline"). `index.html` referencia `<link rel="icon">` y `<link rel="manifest">`.
 
 ---
 
@@ -494,3 +541,4 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 15s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
+12. **Fondo ambiente depende de backgrounds transparentes**: `PhoneFrame`, `CameraView` y los `.page` de `SearchPage`/`ProductPage`/`NewProductPage` son `transparent` a propósito para que el fondo animado (`.ambient` en `App.module.css`) se vea. No cambiar estos `background` a colores opacos sin re-evaluar la capa ambiente. El `CameraView` usa un fallback translúcido (`rgba(10,10,15,0.55)`) en lugar de `#000` para que el ambiente asome en desktop (sin cámara).

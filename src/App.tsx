@@ -1,24 +1,25 @@
 import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router'
 import { AnimatePresence } from 'motion/react'
-import PhoneFrame from '@/components/PhoneFrame'
-import ErrorBoundary from '@/components/ErrorBoundary'
-import ToastProvider from '@/components/Toast'
-import SplashScreen from '@/components/SplashScreen'
-import LoadingDots from '@/components/LoadingDots'
-import '@/styles/globals.css'
-import '@/styles/animations.css'
-import styles from './App.module.css'
+import { PhoneFrame, ErrorBoundary, ToastProvider, SplashScreen } from '@/components/ui'
 
-const SearchPage = lazy(() => import('@/pages/SearchPage'))
-const SearchPageText = lazy(() => import('@/pages/SearchPageText'))
-const ProductPage = lazy(() => import('@/pages/ProductPage'))
-const NewProductPage = lazy(() => import('@/pages/NewProductPage'))
+const ScanPage = lazy(() => import('@/pages/ScanPage').then(m => ({ default: m.ScanPage })))
+const SearchPage = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })))
+const ProductPage = lazy(() => import('@/pages/ProductPage').then(m => ({ default: m.ProductPage })))
+const NewProductPage = lazy(() => import('@/pages/NewProductPage').then(m => ({ default: m.NewProductPage })))
+const InventoryPage = lazy(() => import('@/pages/InventoryPage').then(m => ({ default: m.InventoryPage })))
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const ScanPageRedirect = lazy(() => import('@/pages/ScanPageRedirect').then(m => ({ default: m.ScanPageRedirect })))
 
 function LoadingFallback() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <LoadingDots text="Cargando..." />
+    <div className="flex items-center justify-center h-full">
+      <div className="flex gap-1.5">
+        <div className="w-2 h-2 rounded-full bg-white/40 animate-[dotBounce_1.2s_ease-in-out_infinite]" />
+        <div className="w-2 h-2 rounded-full bg-white/40 animate-[dotBounce_1.2s_ease-in-out_infinite_0.15s]" />
+        <div className="w-2 h-2 rounded-full bg-white/40 animate-[dotBounce_1.2s_ease-in-out_infinite_0.3s]" />
+      </div>
     </div>
   )
 }
@@ -28,34 +29,30 @@ export default function App() {
 
   return (
     <>
-      <div className={styles.ambient} aria-hidden="true">
-        <span className={`${styles.blob} ${styles.blob1}`} />
-        <span className={`${styles.blob} ${styles.blob2}`} />
-        <span className={`${styles.blob} ${styles.blob3}`} />
-      </div>
+      <AnimatePresence>
+        {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      </AnimatePresence>
 
-      <div className={styles.appShell}>
-        <AnimatePresence>
-          {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
-        </AnimatePresence>
-
-        <ToastProvider>
-          <ErrorBoundary>
-            <BrowserRouter>
-              <PhoneFrame>
-                <Suspense fallback={<LoadingFallback />}>
-                  <Routes>
-                    <Route path="/" element={<SearchPage />} />
-                    <Route path="/search-text" element={<SearchPageText />} />
-                    <Route path="/product/:barcode" element={<ProductPage />} />
-                    <Route path="/new/:barcode" element={<NewProductPage />} />
-                  </Routes>
-                </Suspense>
-              </PhoneFrame>
-            </BrowserRouter>
-          </ErrorBoundary>
-        </ToastProvider>
-      </div>
+      <ToastProvider>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <PhoneFrame>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/" element={<ScanPage />} />
+                  <Route path="/search" element={<SearchPage />} />
+                  <Route path="/product/:barcode" element={<ProductPage />} />
+                  <Route path="/new/:barcode" element={<NewProductPage />} />
+                  <Route path="/new" element={<ScanPageRedirect />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                </Routes>
+              </Suspense>
+            </PhoneFrame>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </ToastProvider>
     </>
   )
 }

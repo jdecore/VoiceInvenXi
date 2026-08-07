@@ -1,28 +1,29 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
+import { ArrowLeft, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft, Check, ChevronRight, Tag, Building2, LayoutGrid, Box, Scale, Package } from 'lucide-react'
-import GlassButton from '@/components/GlassButton'
-import GlassInput from '@/components/GlassInput'
-import MicButton from '@/components/MicButton'
-import VoiceWave from '@/components/VoiceWave'
-import SuccessCheck from '@/components/SuccessCheck'
-import LoadingDots from '@/components/LoadingDots'
+import { GlassCard, GlassInput, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
-import { useToast } from '@/hooks/useToast'
 import { productApi } from '@/api'
-import styles from './NewProductPage.module.css'
 
-interface FormData {
-  name: string
-  brand: string
-  category: string
-  presentation: string
-  unit: string
+interface WizardStep {
+  key: string
+  label: string
+  field: keyof typeof INITIAL_VALUES
+  required: boolean
+  autoAdvance?: boolean
 }
 
-const INITIAL_FORM: FormData = {
+const STEPS: WizardStep[] = [
+  { key: 'name', label: 'Nombre del producto', field: 'name', required: true },
+  { key: 'brand', label: 'Marca', field: 'brand', required: false, autoAdvance: true },
+  { key: 'category', label: 'Categoría', field: 'category', required: false, autoAdvance: true },
+  { key: 'presentation', label: 'Presentación', field: 'presentation', required: false, autoAdvance: true },
+  { key: 'unit', label: 'Unidad de medida', field: 'unit', required: false, autoAdvance: true },
+]
+
+const INITIAL_VALUES = {
   name: '',
   brand: '',
   category: '',
@@ -30,279 +31,257 @@ const INITIAL_FORM: FormData = {
   unit: '',
 }
 
-interface StepConfig {
-  key: keyof FormData
-  label: string
-  icon: React.ReactNode
-  required: boolean
-  placeholder: string
-}
-
-const STEPS: StepConfig[] = [
-  { key: 'name', label: 'Nombre del Producto', icon: <Tag size={18} />, required: true, placeholder: 'Ej: Aceite de Oliva' },
-  { key: 'brand', label: 'Marca', icon: <Building2 size={18} />, required: false, placeholder: 'Ej: La Española' },
-  { key: 'category', label: 'Categoría', icon: <LayoutGrid size={18} />, required: false, placeholder: 'Ej: Abarrotes' },
-  { key: 'presentation', label: 'Presentación', icon: <Box size={18} />, required: false, placeholder: 'Ej: Botella 500ml' },
-  { key: 'unit', label: 'Unidad de Medida', icon: <Scale size={18} />, required: false, placeholder: 'Ej: Unidad' },
-]
-
-export default function NewProductPage() {
+export function NewProductPage() {
   const { barcode } = useParams<{ barcode: string }>()
   const navigate = useNavigate()
-  const [form, setForm] = useState<FormData>(INITIAL_FORM)
-  const [step, setStep] = useState(0)
-  const [direction, setDirection] = useState(1)
+  const { showToast } = useToast()
+  const { isListening, transcript, interimTranscript, start, stop, isSupported, error, reset } = useSTT()
+  const { speak } = useTTS()
+
+  const [currentStep, setCurrentStep] = useState(0)
+  const [values, setValues] = useState(INITIAL_VALUES)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { isListening, transcript, interimTranscript, start, stop, isSupported, reset, error: sttError } =
-    useSTT()
-  const { speak: speakText } = useTTS()
-  const { showToast } = useToast()
-
-  const currentStep = STEPS[step]
-  const isLastStep = step === STEPS.length - 1
-
-  const notifyError = useCallback(
-    (msg: string) => {
-      showToast({ variant: 'error', message: msg })
-      speakText(msg)
-    },
-    [showToast, speakText]
-  )
-
-  const updateField = useCallback((field: keyof FormData, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
+  useEffect(() => {
+    speak('Producto nuevo. Di el nombre del producto.')
   }, [])
 
-  const handleMicPress = useCallback(() => {
-    if (isListening) {
-      stop()
+  useEffect(() => {
+    if (!transcript) return
+
+    const step = STEPS[currentStep]
+    setValues((prev) => ({ ...prev, [step.field]: transcript }))
+
+    if (step.autoAdvance && step.required === false) {
+      setTimeout(() => {
+        if (currentStep < STEPS.length - 1) {
+          setCurrentStep((prev) => prev + 1)
+        }
+      }, 600)
+    }
+  }, [transcript])
+
+  const handleVoice = () => {
+    reset()
+    start()
+  }
+
+  const handleNext = () => {
+    const step = STEPS[currentStep]
+
+    if (step.required && !values[step.field].trim()) {
+      showToast({ variant: 'error', message: `El campo "${step.label}" es obligatorio` })
+      return
+    }
+
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep((prev) => prev + 1)
     } else {
-      reset()
-      start()
-    }
-  }, [isListening, start, stop, reset])
-
-  useEffect(() => {
-    if (!isListening && transcript && !showSuccess && !isSaving) {
-      updateField(currentStep.key, transcript)
-      reset()
-
-      if (!currentStep.required) {
-        autoAdvanceTimerRef.current = setTimeout(() => {
-          setDirection(1)
-          setStep((prev) => Math.min(prev + 1, STEPS.length - 1))
-        }, 600)
-      }
-    }
-  }, [isListening, transcript, showSuccess, isSaving, currentStep.key, currentStep.required, updateField, reset])
-
-  useEffect(() => {
-    if (sttError) {
-      notifyError(sttError)
-    }
-  }, [sttError, notifyError])
-
-  useEffect(() => {
-    return () => {
-      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current)
-    }
-  }, [])
-
-  const handleNext = useCallback(() => {
-    if (currentStep.required && !form[currentStep.key].trim()) {
-      notifyError(`El campo "${currentStep.label}" es obligatorio`)
-      return
-    }
-
-    if (isLastStep) {
       handleSave()
-      return
     }
+  }
 
-    setDirection(1)
-    setStep((prev) => prev + 1)
-  }, [currentStep, form, isLastStep, notifyError])
-
-  const handleBack = useCallback(() => {
-    if (step > 0) {
-      setDirection(-1)
-      setStep((prev) => prev - 1)
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1)
     }
-  }, [step])
+  }
 
   const handleSave = useCallback(async () => {
-    if (!form.name.trim()) {
-      notifyError('El nombre es obligatorio')
-      return
-    }
+    if (!barcode) return
 
-    if (!barcode) {
-      notifyError('Código de barras no disponible')
+    if (!values.name.trim()) {
+      showToast({ variant: 'error', message: 'El nombre es obligatorio' })
+      setCurrentStep(0)
       return
     }
 
     setIsSaving(true)
+
     try {
       await productApi.create({
         barcode,
-        name: form.name,
-        brand: form.brand,
-        category: form.category,
-        presentation: form.presentation,
-        unit: form.unit,
+        ...values,
       })
+
       setShowSuccess(true)
-      showToast({ variant: 'success', message: 'Producto registrado correctamente' })
-      speakText('Producto registrado correctamente')
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar el producto'
-      notifyError(msg)
+      speak('Producto creado exitosamente')
+
+      setTimeout(() => {
+        navigate('/', { replace: true })
+      }, 3000)
+    } catch {
+      showToast({ variant: 'error', message: 'Error al crear producto' })
     } finally {
       setIsSaving(false)
     }
-  }, [form, barcode, notifyError, showToast, speakText])
+  }, [barcode, values, navigate, speak, showToast])
 
-  const handleSuccessComplete = useCallback(() => {
-    navigate('/')
-  }, [navigate])
-
-  const micStatusText = isListening
-    ? (interimTranscript || 'Escuchando...')
-    : (form[currentStep.key] ? 'Toca para cambiar' : 'Toca para hablar...')
+  const step = STEPS[currentStep]
 
   return (
-    <div className={styles.page}>
-      <motion.div
-        className={styles.topBar}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <button className={styles.backButton} onClick={handleBack}>
-          <ArrowLeft size={20} />
-        </button>
-        <span className={styles.logo}>VoiceInvenXi</span>
-      </motion.div>
+    <div className="h-full flex flex-col bg-transparent">
+      {showSuccess && (
+        <SuccessAnimation
+          message="Producto creado"
+          subMessage={values.name}
+          onComplete={() => setShowSuccess(false)}
+        />
+      )}
 
-      <div className={styles.content}>
-        <motion.div
-          className={styles.wizardCard}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
         >
-          {/* Header compacto del producto */}
-          <div className={styles.productHeader}>
-            <div className={styles.productThumb}>
-              <Package size={24} />
-            </div>
-            <div className={styles.productInfo}>
-              <span className={styles.productName}>
-                {form.name || 'Nuevo Producto'}
-              </span>
-              <span className={styles.productMeta}>
-                {[form.brand, form.category, form.presentation].filter(Boolean).join(' · ') || barcode}
-              </span>
-            </div>
-          </div>
-
-          {/* Indicador de paso */}
-          <div className={styles.stepIndicator}>
-            <span className={styles.stepTitle}>
-              Paso {step + 1} de {STEPS.length}: {currentStep.label}
-            </span>
-            <div className={styles.stepDots}>
-              {STEPS.map((_, i) => (
-                <div
-                  key={i}
-                  className={`${styles.dot} ${i === step ? styles.dotActive : ''} ${i < step ? styles.dotCompleted : ''}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Área de interacción */}
-          <div className={styles.stepBody}>
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={step}
-                custom={direction}
-                initial={{ opacity: 0, x: direction * 60 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: direction * -60 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className={styles.stepContent}
-              >
-                <div className={styles.inputArea}>
-                  <GlassInput
-                    label={currentStep.label}
-                    value={form[currentStep.key]}
-                    onChange={(v) => updateField(currentStep.key, v)}
-                    placeholder={currentStep.placeholder}
-                    icon={currentStep.icon}
-                  />
-                </div>
-
-                {isSupported && (
-                  <div className={styles.micArea}>
-                    <MicButton
-                      isListening={isListening}
-                      onClick={handleMicPress}
-                      size={40}
-                    />
-                    <VoiceWave active={isListening} />
-                    <span className={`${styles.micLabel} ${isListening ? styles.micLabelActive : ''}`}>
-                      {micStatusText}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Footer con acción */}
-          <div className={styles.stepFooter}>
-            {isSaving && <LoadingDots text="Guardando producto..." />}
-
-            {!isSaving && !showSuccess && (
-              <>
-                {step > 0 && (
-                  <GlassButton
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleBack}
-                  >
-                    ← Atrás
-                  </GlassButton>
-                )}
-                <GlassButton
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  icon={isLastStep ? <Check size={22} /> : <ChevronRight size={22} />}
-                  onClick={handleNext}
-                  disabled={showSuccess || isSaving}
-                >
-                  {isLastStep ? 'Guardar Producto' : 'Confirmar →'}
-                </GlassButton>
-              </>
-            )}
-          </div>
-        </motion.div>
+          <ArrowLeft className="w-5 h-5 text-white/70" />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-white text-lg font-semibold">Nuevo Producto</h1>
+          <p className="text-white/50 text-xs font-mono">{barcode}</p>
+        </div>
       </div>
 
-      <AnimatePresence>
-        {showSuccess && (
-          <SuccessCheck
-            message="Producto registrado"
-            subMessage="Correctamente"
-            onComplete={handleSuccessComplete}
+      {/* Progress dots */}
+      <div className="flex items-center justify-center gap-2 px-4 py-3">
+        {STEPS.map((s, i) => (
+          <div
+            key={s.key}
+            className={`
+              h-2 rounded-full transition-all duration-300
+              ${i === currentStep
+                ? 'w-8 bg-[#4F8CFF]'
+                : i < currentStep
+                  ? 'w-2 bg-[#2ECC71]'
+                  : 'w-2 bg-white/20'
+              }
+            `}
           />
-        )}
-      </AnimatePresence>
+        ))}
+      </div>
+
+      {/* Product preview */}
+      <div className="px-4 pb-3">
+        <GlassCard className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-medium truncate">
+              {values.name || 'Sin nombre'}
+            </p>
+            <p className="text-white/50 text-sm truncate">
+              {[values.brand, values.category].filter(Boolean).join(' • ') || 'Sin detalles'}
+            </p>
+          </div>
+          {values.presentation && (
+            <span className="text-white/40 text-xs">{values.presentation}</span>
+          )}
+        </GlassCard>
+      </div>
+
+      {/* Step content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step.key}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <GlassCard elevated>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-white/70 text-sm font-medium">
+                    Paso {currentStep + 1} de {STEPS.length}
+                  </p>
+                  {step.required && (
+                    <span className="text-[#FF5A5F] text-xs">Requerido</span>
+                  )}
+                </div>
+
+                <GlassInput
+                  label={step.label}
+                  value={values[step.field]}
+                  onChange={(val) => setValues((prev) => ({ ...prev, [step.field]: val }))}
+                  placeholder={`Ingresa ${step.label.toLowerCase()}...`}
+                />
+
+                {/* Voice control */}
+                <div className="flex flex-col items-center gap-3 pt-4">
+                  {isListening && <VoiceWave active />}
+
+                  <button
+                    onClick={isListening ? stop : handleVoice}
+                    disabled={!isSupported}
+                    className={`
+                      w-16 h-16 rounded-full
+                      flex items-center justify-center
+                      transition-all duration-300
+                      ${isListening
+                        ? 'bg-[#FF5A5F] shadow-[0_0_30px_rgba(255,90,95,0.5)] animate-pulse-scan'
+                        : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] shadow-[0_4px_20px_rgba(79,140,255,0.3)]'
+                      }
+                      disabled:opacity-50
+                    `}
+                  >
+                    <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M12 2C10.34 2 9 3.34 9 5V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V5C15 3.34 13.66 2 12 2Z" />
+                      <path d="M19 10V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V10" />
+                      <path d="M12 19V22" />
+                    </svg>
+                  </button>
+
+                  <p className="text-white/50 text-sm text-center">
+                    {isListening
+                      ? interimTranscript || `Di ${step.label.toLowerCase()}...`
+                      : 'Toca para hablar'}
+                  </p>
+                </div>
+
+                {error && (
+                  <p className="text-[#FF5A5F] text-sm text-center">{error}</p>
+                )}
+              </div>
+            </GlassCard>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation */}
+        <div className="flex gap-3 mt-4">
+          {currentStep > 0 && (
+            <button
+              onClick={handleBack}
+              className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white/70 font-medium transition-colors"
+            >
+              Atrás
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={isSaving}
+            className={`
+              flex-1 py-3 rounded-xl font-medium
+              flex items-center justify-center gap-2
+              transition-all duration-200
+              ${currentStep === STEPS.length - 1
+                ? 'bg-[#2ECC71] hover:bg-[#27AE60] text-white'
+                : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] text-white'
+              }
+              disabled:opacity-50
+            `}
+          >
+            {currentStep === STEPS.length - 1 ? (
+              <>
+                <Check className="w-5 h-5" />
+                {isSaving ? 'Guardando...' : 'Guardar'}
+              </>
+            ) : (
+              'Siguiente'
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

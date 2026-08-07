@@ -1,278 +1,253 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft } from 'lucide-react'
-import GlassCard from '@/components/GlassCard'
-import ProductImage from '@/components/ProductImage'
-import Barcode from '@/components/Barcode'
-import StockBadge from '@/components/StockBadge'
-import MicButton from '@/components/MicButton'
-import VoiceWave from '@/components/VoiceWave'
-import SuccessCheck from '@/components/SuccessCheck'
-import Skeleton from '@/components/Skeleton'
-import LoadingDots from '@/components/LoadingDots'
+import { ArrowLeft, ArrowDown, ArrowUp, Package } from 'lucide-react'
+import { GlassCard, StockBadge, VoiceWave, SuccessAnimation, SkeletonLoader, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi, movementApi } from '@/api'
 import type { Product } from '@/types'
-import styles from './ProductPage.module.css'
 
-export default function ProductPage() {
+export function ProductPage() {
   const { barcode } = useParams<{ barcode: string }>()
   const navigate = useNavigate()
-  const [product, setProduct] = useState<Product | undefined>(undefined)
+  const { showToast } = useToast()
+  const { isListening, transcript, interimTranscript, start, stop, isSupported, error, reset } = useSTT()
+  const { speak } = useTTS()
+
+  const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [addedQty, setAddedQty] = useState(0)
   const [movementType, setMovementType] = useState<'in' | 'out'>('in')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [lastMovement, setLastMovement] = useState<{ quantity: number; type: 'in' | 'out' } | null>(null)
 
   useEffect(() => {
-    if (!barcode) {
-      setIsLoading(false)
-      return
+    if (!barcode) return
+
+    const fetchProduct = async () => {
+      setIsLoading(true)
+      try {
+        const data = await productApi.getByBarcode(barcode)
+        setProduct(data)
+        speak(`${data.name}, ${data.stock} unidades en stock`)
+      } catch {
+        navigate(`/new/${barcode}`, { replace: true })
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    productApi
-      .getByBarcode(barcode)
-      .then((data) => {
-        setProduct(data)
-        speakText(`${data.name}, ${data.stock} ${data.unit || 'unidades'} en stock`)
-      })
-      .catch(() => {
-        navigate(`/new/${barcode}`, { replace: true })
-      })
-      .finally(() => setIsLoading(false))
+    fetchProduct()
   }, [barcode])
 
-  const ttsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!transcript || !product) return
 
-  const { isListening, transcript, interimTranscript, start, stop, isSupported } =
-    useSTT()
-  const { speak: speakText } = useTTS()
-
-  const handleVoiceToggle = useCallback(() => {
-    if (isListening) {
-      stop()
-    } else {
-      start()
+    const numberMatch = transcript.match(/\d+/)
+    if (numberMatch) {
+      const quantity = parseInt(numberMatch[0], 10)
+      handleMovement(quantity)
     }
-  }, [isListening, start, stop])
+  }, [transcript])
 
-  const handleTranscriptReady = useCallback(async () => {
-    if (transcript && product) {
-      setIsProcessing(true)
+  const handleMovement = useCallback(async (quantity: number) => {
+    if (!product) return
 
-      const match = transcript.match(/(\d+)/)
-      const qty = match ? parseInt(match[1], 10) : 10
+    try {
+      await movementApi.create({
+        productId: product.id,
+        quantity,
+        type: movementType,
+      })
 
-      try {
-        await movementApi.create({
-          productId: product.id,
-          quantity: qty,
-          type: movementType,
-        })
-
-        setProduct((prev) =>
-          prev
-            ? {
-                ...prev,
-                stock: movementType === 'in' ? prev.stock + qty : prev.stock - qty,
-              }
-            : prev
-        )
-      } catch (err) {
-        console.error('Error registrando movimiento:', err)
-      }
-
-      setAddedQty(qty)
-      setIsProcessing(false)
+      setLastMovement({ quantity, type: movementType })
       setShowSuccess(true)
-      ttsTimerRef.current = setTimeout(() => {
-        speakText(`${qty} ${product.unit || 'unidades'} ${movementType === 'in' ? 'agregadas' : 'retiradas'}`)
-      }, 2000)
-    }
-  }, [transcript, product, movementType, speakText])
+      setProduct((prev) => prev ? {
+        ...prev,
+        stock: movementType === 'in' ? prev.stock + quantity : prev.stock - quantity,
+      } : null)
 
-  useEffect(() => {
-    if (!isListening && transcript && !isProcessing && !showSuccess) {
-      handleTranscriptReady()
+      setTimeout(() => {
+        speak(`${quantity} unidades ${movementType === 'in' ? 'agregadas' : 'retiradas'}. Stock actual: ${movementType === 'in' ? (product.stock + quantity) : (product.stock - quantity)}`)
+      }, 2500)
+    } catch {
+      showToast({ variant: 'error', message: 'Error al registrar movimiento' })
     }
-  }, [isListening, transcript, isProcessing, showSuccess, handleTranscriptReady])
+  }, [product, movementType, speak, showToast])
 
-  const handleSuccessComplete = useCallback(() => {
-    setShowSuccess(false)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
-    }
-  }, [])
+  const handleVoiceStart = () => {
+    reset()
+    start()
+  }
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.topBar}>
-          <button className={styles.backButton} onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+      <div className="h-full flex flex-col bg-transparent">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.06]"
+          >
+            <ArrowLeft className="w-5 h-5 text-white/70" />
           </button>
-          <span className={styles.logo}>VoiceInvenXi</span>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.productCard}>
-            <Skeleton variant="circle" width={120} height={120} />
-            <GlassCard>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                <Skeleton width="75%" height={18} />
-                <Skeleton width="55%" height={14} />
-                <Skeleton width="40%" height={14} />
-              </div>
-            </GlassCard>
-            <GlassCard compact>
-              <Skeleton width="100%" height={20} />
-            </GlassCard>
+          <div className="flex-1">
+            <SkeletonLoader className="h-6 w-40" />
           </div>
+        </div>
+        <div className="flex-1 px-4 space-y-4">
+          <SkeletonLoader className="h-40" />
+          <SkeletonLoader className="h-24" />
         </div>
       </div>
     )
   }
 
-  if (!product) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.topBar}>
-          <button className={styles.backButton} onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
-          </button>
-          <span className={styles.logo}>VoiceInvenXi</span>
-        </div>
-        <div className={styles.content}>
-          <LoadingDots text="Redirigiendo..." />
-        </div>
-      </div>
-    )
-  }
+  if (!product) return null
 
   return (
-    <div className={styles.page}>
-      <motion.div
-        className={styles.topBar}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <button className={styles.backButton} onClick={() => navigate('/')}>
-          <ArrowLeft size={20} />
+    <div className="h-full flex flex-col bg-transparent">
+      {showSuccess && (
+        <SuccessAnimation
+          message="Movimiento registrado"
+          subMessage={`${lastMovement?.type === 'in' ? '+' : '-'}${lastMovement?.quantity} unidades`}
+          onComplete={() => setShowSuccess(false)}
+        />
+      )}
+
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-white/70" />
         </button>
-        <span className={styles.logo}>VoiceInvenXi</span>
-      </motion.div>
-
-      <div className={styles.content}>
-        <motion.div
-          className={styles.productCard}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <ProductImage src={product.imageUrl} alt={product.name} size="lg" />
-
-          <GlassCard>
-            <div className={styles.productInfo}>
-              <span className={styles.productName}>{product.name}</span>
-              <span className={styles.productDetail}>
-                {product.brand} · {product.category}
-              </span>
-              <span className={styles.productDetail}>{product.presentation}</span>
-            </div>
-          </GlassCard>
-
-          <GlassCard compact>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Barcode value={product.barcode} />
-              <StockBadge stock={product.stock} unit={product.unit} />
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div
-          className={styles.registerSection}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
-            <button
-              className={`${styles.typeButton} ${movementType === 'in' ? styles.typeButtonActive : ''}`}
-              onClick={() => setMovementType('in')}
-            >
-              Entrada
-            </button>
-            <button
-              className={`${styles.typeButton} ${movementType === 'out' ? styles.typeButtonActive : ''}`}
-              onClick={() => setMovementType('out')}
-            >
-              Salida
-            </button>
-          </div>
-
-          <MicButton
-            isListening={isListening}
-            onClick={handleVoiceToggle}
-            disabled={isProcessing || !isSupported}
-          />
-
-          <VoiceWave active={isListening} />
-
-          <AnimatePresence mode="wait">
-            {isListening && (
-              <motion.div
-                key="listening"
-                className={styles.transcriptBox}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <div className={styles.transcriptLabel}>Escuchando...</div>
-                <div className={styles.transcriptText}>
-                  {interimTranscript || 'Habla ahora'}
-                </div>
-              </motion.div>
-            )}
-
-            {!isListening && transcript && !isProcessing && !showSuccess && (
-              <motion.div
-                key="result"
-                className={styles.transcriptBox}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <div className={styles.transcriptLabel}>Detectado</div>
-                <div className={styles.transcriptText}>"{transcript}"</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {isProcessing && <LoadingDots text="Procesando..." />}
-
-          {!isListening && !transcript && !isProcessing && (
-            <span className={styles.actionHint}>
-              Pulsa el micrófono y di algo como<br />
-              <strong>"Entraron veinte cajas"</strong>
-            </span>
-          )}
-        </motion.div>
+        <h1 className="text-white text-lg font-semibold flex-1 truncate">{product.name}</h1>
       </div>
 
-      <AnimatePresence>
-        {showSuccess && (
-          <SuccessCheck
-            message={`${addedQty} ${product.unit || 'unidades'} ${movementType === 'in' ? 'agregadas' : 'retiradas'}`}
-            onComplete={handleSuccessComplete}
-          />
-        )}
-      </AnimatePresence>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
+        {/* Product image placeholder */}
+        <div className="relative w-full h-40 rounded-2xl bg-white/[0.04] border border-white/[0.08] overflow-hidden flex items-center justify-center">
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Package className="w-16 h-16 text-white/15" />
+          )}
+        </div>
+
+        {/* Product info */}
+        <GlassCard elevated>
+          <div className="space-y-3">
+            <div>
+              <p className="text-white text-xl font-bold">{product.name}</p>
+              <p className="text-white/50 text-sm">{product.brand}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-sm">
+              {product.category && (
+                <span className="px-2.5 py-1 rounded-full bg-white/[0.06] text-white/60">
+                  {product.category}
+                </span>
+              )}
+              {product.presentation && (
+                <span className="px-2.5 py-1 rounded-full bg-white/[0.06] text-white/60">
+                  {product.presentation}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
+              <p className="text-white/50 text-sm">Stock actual</p>
+              <StockBadge stock={product.stock} unit={product.unit} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-white/50 text-sm">Código de barras</p>
+              <span className="font-mono text-white/70 text-sm">{product.barcode}</span>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Movement controls */}
+        <GlassCard elevated>
+          <div className="space-y-4">
+            <p className="text-white/70 text-sm font-medium">Registrar movimiento</p>
+
+            {/* Type toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMovementType('in')}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
+                  font-semibold text-sm transition-all duration-200
+                  ${movementType === 'in'
+                    ? 'bg-[#2ECC71] text-white shadow-[0_4px_16px_rgba(46,204,113,0.3)]'
+                    : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1]'
+                  }
+                `}
+              >
+                <ArrowDown className="w-4 h-4" />
+                Entrada
+              </button>
+              <button
+                onClick={() => setMovementType('out')}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
+                  font-semibold text-sm transition-all duration-200
+                  ${movementType === 'out'
+                    ? 'bg-[#FF5A5F] text-white shadow-[0_4px_16px_rgba(255,90,95,0.3)]'
+                    : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1]'
+                  }
+                `}
+              >
+                <ArrowUp className="w-4 h-4" />
+                Salida
+              </button>
+            </div>
+
+            {/* Voice control */}
+            <div className="flex flex-col items-center gap-3">
+              {isListening && <VoiceWave active />}
+
+              <button
+                onClick={isListening ? stop : handleVoiceStart}
+                disabled={!isSupported}
+                className={`
+                  w-16 h-16 rounded-full
+                  flex items-center justify-center
+                  transition-all duration-300
+                  ${isListening
+                    ? 'bg-[#FF5A5F] shadow-[0_0_30px_rgba(255,90,95,0.5)] animate-pulse-scan'
+                    : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] shadow-[0_4px_20px_rgba(79,140,255,0.3)]'
+                  }
+                  disabled:opacity-50
+                `}
+              >
+                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M12 2C10.34 2 9 3.34 9 5V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V5C15 3.34 13.66 2 12 2Z" />
+                  <path d="M19 10V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V10" />
+                  <path d="M12 19V22" />
+                </svg>
+              </button>
+
+              <p className="text-white/50 text-sm text-center">
+                {isListening
+                  ? interimTranscript || 'Di la cantidad...'
+                  : 'Toca para hablar'}
+              </p>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="text-[#FF5A5F] text-sm text-center">{error}</p>
+            )}
+          </div>
+        </GlassCard>
+      </div>
     </div>
   )
 }
