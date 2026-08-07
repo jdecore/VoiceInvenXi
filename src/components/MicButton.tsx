@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { Mic } from 'lucide-react'
+import { hapticTap } from '@/lib/haptics'
 import styles from './MicButton.module.css'
 
 interface MicButtonProps {
@@ -15,10 +16,15 @@ export default function MicButton({
   disabled,
   size = 28,
 }: MicButtonProps) {
+  const handleClick = () => {
+    hapticTap()
+    onClick()
+  }
+
   return (
     <motion.button
       className={`${styles.micButton} ${isListening ? styles.listening : ''} ${disabled ? styles.disabled : ''}`}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       whileTap={{ scale: 0.92 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}

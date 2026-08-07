@@ -4,7 +4,7 @@
   height: 100dvh;
   overflow: hidden;
   position: relative;
-  background: var(--color-bg);
+  background: transparent;
   display: flex;
   flex-direction: column;
 }

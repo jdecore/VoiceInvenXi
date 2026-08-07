@@ -5,6 +5,9 @@ import { ArrowLeft, Mic, Search, Package } from 'lucide-react'
 import { searchApi } from '@/api'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
+import { useToast } from '@/hooks/useToast'
+import EmptyState from '@/components/EmptyState'
+import Skeleton from '@/components/Skeleton'
 import type { SemanticSearchResult } from '@/types'
 import styles from './SearchPageText.module.css'
 
@@ -14,10 +17,10 @@ export default function SearchPageText() {
   const [results, setResults] = useState<SemanticSearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { isListening, transcript, start, stop, isSupported } = useSTT()
   const { speak } = useTTS()
+  const { showToast } = useToast()
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -34,7 +37,6 @@ export default function SearchPageText() {
     if (!q.trim()) return
 
     setLoading(true)
-    setError(null)
     setSearched(true)
 
     try {
@@ -44,7 +46,7 @@ export default function SearchPageText() {
         speak('No se encontraron productos')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al buscar')
+      showToast({ variant: 'error', message: err instanceof Error ? err.message : 'Error al buscar' })
       setResults([])
     } finally {
       setLoading(false)
@@ -132,17 +134,20 @@ export default function SearchPageText() {
         </motion.div>
       )}
 
-      {error && (
-        <motion.div
-          className={styles.error}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {error}
-        </motion.div>
-      )}
-
       <div className={styles.resultsContainer}>
+        {loading && (
+          <div className={styles.skeletonList}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={styles.skeletonCard}>
+                <Skeleton variant="circle" width={40} height={40} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="45%" height={12} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <AnimatePresence mode="popLayout">
           {results.map((item, i) => (
             <motion.button
@@ -170,15 +175,12 @@ export default function SearchPageText() {
           ))}
         </AnimatePresence>
 
-        {searched && !loading && results.length === 0 && !error && (
-          <motion.div
-            className={styles.emptyState}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Package size={40} className={styles.emptyIcon} />
-            <span>No se encontraron productos</span>
-          </motion.div>
+        {searched && !loading && results.length === 0 && (
+          <EmptyState
+            icon={<Package size={40} />}
+            title="No se encontraron productos"
+            description="Prueba con otro nombre o revisa la ortografía."
+          />
         )}
       </div>
     </div>

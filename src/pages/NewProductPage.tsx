@@ -10,6 +10,7 @@ import SuccessCheck from '@/components/SuccessCheck'
 import LoadingDots from '@/components/LoadingDots'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
+import { useToast } from '@/hooks/useToast'
 import { productApi } from '@/api'
 import styles from './NewProductPage.module.css'
 
@@ -53,19 +54,26 @@ export default function NewProductPage() {
   const [direction, setDirection] = useState(1)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [validationError, setValidationError] = useState('')
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { isListening, transcript, interimTranscript, start, stop, isSupported, reset, error: sttError } =
     useSTT()
   const { speak: speakText } = useTTS()
+  const { showToast } = useToast()
 
   const currentStep = STEPS[step]
   const isLastStep = step === STEPS.length - 1
 
+  const notifyError = useCallback(
+    (msg: string) => {
+      showToast({ variant: 'error', message: msg })
+      speakText(msg)
+    },
+    [showToast, speakText]
+  )
+
   const updateField = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
-    setValidationError('')
   }, [])
 
   const handleMicPress = useCallback(() => {
@@ -93,9 +101,9 @@ export default function NewProductPage() {
 
   useEffect(() => {
     if (sttError) {
-      setValidationError(sttError)
+      notifyError(sttError)
     }
-  }, [sttError])
+  }, [sttError, notifyError])
 
   useEffect(() => {
     return () => {
@@ -105,8 +113,7 @@ export default function NewProductPage() {
 
   const handleNext = useCallback(() => {
     if (currentStep.required && !form[currentStep.key].trim()) {
-      setValidationError(`El campo "${currentStep.label}" es obligatorio`)
-      speakText(`El campo ${currentStep.label} es obligatorio`)
+      notifyError(`El campo "${currentStep.label}" es obligatorio`)
       return
     }
 
@@ -117,27 +124,23 @@ export default function NewProductPage() {
 
     setDirection(1)
     setStep((prev) => prev + 1)
-    setValidationError('')
-  }, [currentStep, form, isLastStep, speakText])
+  }, [currentStep, form, isLastStep, notifyError])
 
   const handleBack = useCallback(() => {
     if (step > 0) {
       setDirection(-1)
       setStep((prev) => prev - 1)
-      setValidationError('')
     }
   }, [step])
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) {
-      setValidationError('El nombre es obligatorio')
-      speakText('El nombre es obligatorio')
+      notifyError('El nombre es obligatorio')
       return
     }
 
     if (!barcode) {
-      setValidationError('Código de barras no disponible')
-      speakText('Código de barras no disponible')
+      notifyError('Código de barras no disponible')
       return
     }
 
@@ -152,15 +155,15 @@ export default function NewProductPage() {
         unit: form.unit,
       })
       setShowSuccess(true)
+      showToast({ variant: 'success', message: 'Producto registrado correctamente' })
       speakText('Producto registrado correctamente')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al guardar el producto'
-      setValidationError(msg)
-      speakText(msg)
+      notifyError(msg)
     } finally {
       setIsSaving(false)
     }
-  }, [form, barcode, speakText])
+  }, [form, barcode, notifyError, showToast, speakText])
 
   const handleSuccessComplete = useCallback(() => {
     navigate('/')
@@ -262,10 +265,6 @@ export default function NewProductPage() {
 
           {/* Footer con acción */}
           <div className={styles.stepFooter}>
-            {validationError && (
-              <span className={styles.validationError}>{validationError}</span>
-            )}
-
             {isSaving && <LoadingDots text="Guardando producto..." />}
 
             {!isSaving && !showSuccess && (

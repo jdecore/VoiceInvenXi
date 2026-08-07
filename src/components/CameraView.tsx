@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { Camera } from 'lucide-react'
+import { hapticTap } from '@/lib/haptics'
 import styles from './CameraView.module.css'
 
 function playScanBeep() {
@@ -37,6 +38,7 @@ export default function CameraView({ showScanHint = true, onScan, scanning = tru
     (decodedText: string) => {
       if (onScan) {
         playScanBeep()
+        hapticTap()
         onScan(decodedText)
       }
     },

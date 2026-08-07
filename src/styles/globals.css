@@ -101,6 +101,17 @@ a {
   text-decoration: none;
 }
 
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .glass-supported {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));

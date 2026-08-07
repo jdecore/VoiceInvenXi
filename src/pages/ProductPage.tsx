@@ -9,6 +9,7 @@ import StockBadge from '@/components/StockBadge'
 import MicButton from '@/components/MicButton'
 import VoiceWave from '@/components/VoiceWave'
 import SuccessCheck from '@/components/SuccessCheck'
+import Skeleton from '@/components/Skeleton'
 import LoadingDots from '@/components/LoadingDots'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
@@ -119,7 +120,19 @@ export default function ProductPage() {
           <span className={styles.logo}>VoiceInvenXi</span>
         </div>
         <div className={styles.content}>
-          <LoadingDots text="Cargando producto..." />
+          <div className={styles.productCard}>
+            <Skeleton variant="circle" width={120} height={120} />
+            <GlassCard>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                <Skeleton width="75%" height={18} />
+                <Skeleton width="55%" height={14} />
+                <Skeleton width="40%" height={14} />
+              </div>
+            </GlassCard>
+            <GlassCard compact>
+              <Skeleton width="100%" height={20} />
+            </GlassCard>
+          </div>
         </div>
       </div>
     )
