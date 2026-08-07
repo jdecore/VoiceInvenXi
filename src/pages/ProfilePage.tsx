@@ -7,7 +7,7 @@ export function ProfilePage() {
   const navigate = useNavigate()
 
   return (
-    <div className="h-full flex flex-col bg-transparent overflow-hidden">
+    <div className="min-h-dvh lg:h-full flex flex-col bg-transparent overflow-hidden">
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button
           onClick={() => navigate('/')}

@@ -17,10 +17,11 @@ export function PhoneFrame({ children }: PhoneFrameProps) {
       {/* Phone frame - visible on desktop */}
       <div className="
         relative z-10
-        h-full w-full max-w-[480px]
+        min-h-dvh lg:min-h-0 w-full max-w-[480px]
         lg:h-[844px] lg:rounded-[44px] lg:border lg:border-white/10
         lg:shadow-[0_20px_80px_rgba(0,0,0,0.5)]
         overflow-hidden
+        will-change-transform
         bg-transparent
       ">
         {children}

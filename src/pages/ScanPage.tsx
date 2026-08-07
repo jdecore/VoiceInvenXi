@@ -59,7 +59,7 @@ export function ScanPage() {
   }
 
   return (
-    <div className="relative h-full flex flex-col bg-transparent">
+    <div className="relative min-h-dvh lg:h-full flex flex-col bg-transparent">
       {/* Camera feed */}
       <div className="absolute inset-0 bg-black/80">
         <video
