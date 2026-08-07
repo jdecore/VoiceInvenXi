@@ -99,27 +99,25 @@ export function ScanPage() {
       </div>
 
       {/* Bottom drawer */}
-      <div className="relative z-20 mt-auto">
-        <GlassDrawer>
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onVoiceClick={handleVoiceSearch}
-            onSearch={handleSearch}
-            placeholder="Buscar por voz o texto..."
+      <GlassDrawer className="z-20">
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onVoiceClick={handleVoiceSearch}
+          onSearch={handleSearch}
+          placeholder="Buscar por voz o texto..."
+        />
+
+        {lastScanned && (
+          <ScanBadge
+            productName={lastScanned.name}
+            quantity={lastScanned.quantity}
+            type={lastScanned.type}
           />
+        )}
 
-          {lastScanned && (
-            <ScanBadge
-              productName={lastScanned.name}
-              quantity={lastScanned.quantity}
-              type={lastScanned.type}
-            />
-          )}
-
-          <BottomNav />
-        </GlassDrawer>
-      </div>
+        <BottomNav />
+      </GlassDrawer>
     </div>
   )
 }
