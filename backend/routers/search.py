@@ -30,7 +30,7 @@ class SearchResponse(BaseModel):
     results: list[SearchResult]
 
 
-@router.post("/semantic", response_model=SearchResponse)
+@router.post("/semantic")
 async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)):
     try:
         query_vector = await get_query_embedding(req.query)
@@ -65,7 +65,7 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
                 score=round(float(row.similarity), 4),
             ))
 
-    return SearchResponse(results=results)
+    return {"success": True, "data": SearchResponse(results=results).model_dump()}
 
 
 class SeedResponse(BaseModel):
