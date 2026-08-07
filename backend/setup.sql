@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS products (
   unit VARCHAR(50),
   stock INTEGER DEFAULT 0,
   image_url TEXT,
+  embedding vector(1024),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -25,3 +26,6 @@ CREATE TABLE IF NOT EXISTS movements (
 
 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
 CREATE INDEX IF NOT EXISTS idx_movements_product_id ON movements(product_id);
+
+-- HNSW index for fast vector similarity search
+CREATE INDEX IF NOT EXISTS idx_products_embedding ON products USING hnsw (embedding vector_cosine_ops);

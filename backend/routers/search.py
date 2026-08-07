@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, text
@@ -5,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from models import Product
-from embeddings import get_query_embedding, get_embedding, build_product_text
+from embeddings import get_query_embedding, get_embeddings_batch, build_product_text
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -36,18 +39,19 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
         query_vector = await get_query_embedding(req.query)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
 
-    sql = text(f"""
+    sql = text("""
         SELECT id, barcode, name, brand, category, presentation, unit, stock,
-               1 - (embedding <=> '{vector_str}'::vector) AS similarity
+               1 - (embedding <=> :vector::vector) AS similarity
         FROM products
         WHERE embedding IS NOT NULL
-        ORDER BY embedding <=> '{vector_str}'::vector
+        ORDER BY embedding <=> :vector::vector
         LIMIT 5
     """)
 
-    result = await db.execute(sql)
+    result = await db.execute(sql, {"vector": vector_str})
     rows = result.fetchall()
 
     results = []
@@ -78,20 +82,40 @@ async def seed_embeddings(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product))
     products = result.scalars().all()
 
-    updated = 0
+    if not products:
+        return SeedResponse(updated=0, total=0)
+
+    texts = []
+    product_ids = []
     for product in products:
+        if product.embedding is not None:
+            continue
         text_content = build_product_text(
             product.name, product.brand, product.category, product.presentation
         )
+        texts.append(text_content)
+        product_ids.append(str(product.id))
+
+    if not texts:
+        return SeedResponse(updated=0, total=len(products))
+
+    try:
+        embeddings = await get_embeddings_batch(texts)
+    except Exception as e:
+        logger.error(f"Batch embedding failed: {e}")
+        return SeedResponse(updated=0, total=len(products))
+
+    updated = 0
+    for product_id, embedding in zip(product_ids, embeddings):
         try:
-            embedding = await get_embedding(text_content)
             vector_str = "[" + ",".join(str(v) for v in embedding) + "]"
             await db.execute(
-                text(f"UPDATE products SET embedding = '{vector_str}'::vector WHERE id = '{product.id}'"),
+                text("UPDATE products SET embedding = :vector::vector WHERE id = :id::uuid"),
+                {"vector": vector_str, "id": product_id},
             )
             updated += 1
         except Exception as e:
-            print(f"Error generando embedding para {product.barcode}: {e}")
+            logger.error(f"Error updating embedding for product {product_id}: {e}")
 
     await db.commit()
     return SeedResponse(updated=updated, total=len(products))

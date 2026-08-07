@@ -13,7 +13,8 @@ COHERE_MODEL = "embed-multilingual-v3.0"
 JINA_URL = "https://api.jina.ai/v1/embeddings"
 JINA_MODEL = "jina-embeddings-v5-text-small"
 
-TIMEOUT = 15.0
+TIMEOUT = 30.0
+BATCH_SIZE = 96
 
 
 async def _cohere_embedding(texts: list[str], input_type: str) -> list[list[float]]:
@@ -72,6 +73,15 @@ async def _embed_with_fallback(texts: list[str], cohere_input_type: str, jina_ta
 async def get_embedding(text: str) -> list[float]:
     result = await _embed_with_fallback([text], "search_document", "retrieval.document")
     return result[0]
+
+
+async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
+    all_embeddings = []
+    for i in range(0, len(texts), BATCH_SIZE):
+        batch = texts[i : i + BATCH_SIZE]
+        batch_embeddings = await _embed_with_fallback(batch, "search_document", "retrieval.document")
+        all_embeddings.extend(batch_embeddings)
+    return all_embeddings
 
 
 async def get_query_embedding(text: str) -> list[float]:
