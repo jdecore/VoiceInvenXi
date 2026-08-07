@@ -231,6 +231,49 @@ Registra un movimiento de stock (entrada o salida).
 }
 ```
 
+#### POST /api/search/semantic
+Búsqueda semántica de productos por similitud vectorial (pgvector).
+
+**Request body:**
+```json
+{
+  "query": "aceite de oliva"
+}
+```
+
+**Response exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "id": "uuid",
+        "barcode": "7790123456789",
+        "name": "Aceite de Oliva Extra Virgen",
+        "brand": "La Española",
+        "category": "Abarrotes",
+        "presentation": "Botella 500ml",
+        "unit": "Unidad",
+        "stock": 120,
+        "score": 0.6254
+      }
+    ]
+  }
+}
+```
+
+#### POST /api/search/seed-embeddings
+Genera embeddings vectoriales para todos los productos sin embedding. Usar después de crear productos nuevos.
+
+**Response exitosa (200):**
+```json
+{
+  "updated": 39,
+  "total": 41
+}
+```
+
 ---
 
 ## Modelos de Datos (TypeScript)
@@ -289,13 +332,15 @@ interface ApiResponse<T> {
 backend/
 ├── main.py                 # FastAPI app, CORS, startup (create_all con try/except), routers
 ├── database.py             # SQLAlchemy async + asyncpg (load_dotenv, ssl=require, statement_cache_size=0)
-├── models.py               # SQLAlchemy models (PG_UUID para columnas id/product_id)
+├── models.py               # SQLAlchemy models (PG_UUID para columnas id/product_id, Vector(1024) embedding)
 ├── schemas.py              # Pydantic schemas (model_validator para convertir UUID→str)
+├── embeddings.py           # Cohere (primario) + Jina (fallback) para embeddings vectoriales
 ├── routers/
 │   ├── products.py         # GET /api/products/:barcode, POST /api/products
 │   ├── movements.py        # POST /api/movements
+│   ├── search.py           # POST /api/search/semantic, POST /api/search/seed-embeddings
 │   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
-├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv
+├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv, pgvector, cohere
 ├── init.sql                # Script completo: tablas + 32 productos + movimientos (pegar en Supabase SQL Editor)
 ├── setup.sql               # Solo tablas (sin datos)
 └── seed.sql                # Solo datos (después de setup.sql)
@@ -385,6 +430,8 @@ DATABASE_URL=postgresql://user:pass@host:5432/voiceinvenoxi
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=eyJ...
 ELEVENLABS_API_KEY=sk_...
+COHERE_API_KEY=...
+JINA_API_KEY=...
 ```
 
 ---
@@ -443,3 +490,4 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 8. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 15s para cold-starts de Render.
+11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
