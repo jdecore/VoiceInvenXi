@@ -34,10 +34,10 @@ export function CameraOverlay({ isActive = true }: CameraOverlayProps) {
       {/* Main scan area */}
       <div className="relative w-[70vw] h-[70vw] max-w-[260px] max-h-[260px]">
         {/* Corner markers */}
-        <div className="absolute top-0 left-0 w-16 h-16 border-l-[3px] border-t-[3px] border-[#2ECC71] rounded-tl-lg" />
-        <div className="absolute top-0 right-0 w-16 h-16 border-r-[3px] border-t-[3px] border-[#2ECC71] rounded-tr-lg" />
-        <div className="absolute bottom-0 left-0 w-16 h-16 border-l-[3px] border-b-[3px] border-[#2ECC71] rounded-bl-lg" />
-        <div className="absolute bottom-0 right-0 w-16 h-16 border-r-[3px] border-b-[3px] border-[#2ECC71] rounded-br-lg" />
+        <div className="absolute top-0 left-0 w-12 h-12 border-l-[3px] border-t-[3px] border-[#2ECC71] rounded-tl-lg" />
+        <div className="absolute top-0 right-0 w-12 h-12 border-r-[3px] border-t-[3px] border-[#2ECC71] rounded-tr-lg" />
+        <div className="absolute bottom-0 left-0 w-12 h-12 border-l-[3px] border-b-[3px] border-[#2ECC71] rounded-bl-lg" />
+        <div className="absolute bottom-0 right-0 w-12 h-12 border-r-[3px] border-b-[3px] border-[#2ECC71] rounded-br-lg" />
 
         {/* Center crosshair */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
