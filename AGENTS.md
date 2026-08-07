@@ -5,7 +5,7 @@
 VoiceInvenXi es una aplicación de inventario para bodegas. Los operarios escanean productos con la cámara, hablan para registrar movimientos de stock, y todo se sincroniza con un backend.
 
 **Arquitectura:**
-- Frontend: React 19 + TypeScript + Vite (ESTE REPOSITORIO)
+- Frontend: React 19 + TypeScript + Vite + Tailwind CSS v4 (ESTE REPOSITORIO)
 - Backend: FastAPI + PostgreSQL (desplegado en Render)
 - Deploy: Frontend en Vercel, Backend en Render, DB en Supabase
 
@@ -18,12 +18,12 @@ VoiceInvenXi es una aplicación de inventario para bodegas. Los operarios escane
 | React | 19.x | Core UI |
 | TypeScript | 6.x | Type safety |
 | Vite | 8.x | Build tool |
+| Tailwind CSS | 4.x | Utility-first CSS framework |
 | react-router | 7.x | Client-side routing |
 | motion | 12.x | Animaciones (antes framer-motion) |
 | lucide-react | 1.x | Iconos |
-| CSS Modules | - | Estilos con scope |
 
-**NO usar:** Tailwind, MUI, Ant Design, Bootstrap, o cualquier librería de componentes pesada.
+**NO usar:** MUI, Ant Design, Bootstrap, o cualquier librería de componentes pesada.
 
 ### Responsive Design
 
@@ -31,8 +31,7 @@ La app es full-screen y se adapta a cualquier dispositivo:
 
 - **Mobile** (`< 481px`): sin bordes ni sombras, ocupa 100% de la pantalla
 - **Desktop** (`≥ 481px`): se centra como mockup de teléfono con max-width 480px, border-radius 44px y sombra, altura máxima 844px
-- **CSS Custom Properties fluídas**: spacing, font-size y radius usan `clamp()` para escalar suavemente entre pantallas chicas y grandes
-- **Unidades relativas**: todos los componentes usan `100%`, `100dvh`, `flex`, y las variables CSS fluidas. Sin valores fijos en pixeles para layout
+- **Tailwind CSS v4**: utilidades de responsive design, dark mode automático, y design tokens personalizados
 
 ---
 
@@ -41,52 +40,51 @@ La app es full-screen y se adapta a cualquier dispositivo:
 ```
 src/
 ├── main.tsx                    # Entry point, renderiza App en StrictMode
-├── App.tsx                     # Splash + ToastProvider + ErrorBoundary + capa ambiente, BrowserRouter + PhoneFrame + lazy routes
-├── App.module.css               # Capa ambiente (blobs animados detrás del PhoneFrame)
-├── vite-env.d.ts               # Tipos globales (CSS Modules, SpeechRecognition, SpeechRecognitionErrorEvent)
+├── index.css                   # Tailwind CSS imports + theme (colores, animaciones, glassmorphism)
+├── App.tsx                     # ToastProvider + ErrorBoundary + BrowserRouter + PhoneFrame + lazy routes
+├── vite-env.d.ts               # Tipos globales (SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
-├── api.ts                      # Fetcher genérico (timeout 15s, extrae error de detail.message) + productApi + movementApi
-│
-├── styles/
-│   ├── globals.css             # CSS custom properties (tokens), reset, font Inter
-│   └── animations.css          # @keyframes compartidos (pulse, ripple, scanLine, waveBar: 4px-24px, etc.)
+├── api.ts                      # Fetcher genérico (timeout 120s, extrae error de detail.message) + productApi + movementApi
 │
 ├── lib/
 │   ├── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
 │   └── haptics.ts              # Wrapper de navigator.vibrate (feature-check, no-op en desktop/https-fail)
 │
 ├── hooks/
-│   ├── useVoiceRecognition.ts  # (deprecated) Wrapper Web Speech API
-│   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback. Incluye error handling, timeout de 10s, y estado `error`
+│   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback
 │   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
 │   ├── useToast.ts             # Contexto + hook useToast() para el sistema de toasts (ToastProvider)
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
-├── components/                 # 18 componentes reutilizables
-│   ├── GlassCard.tsx           # Card glassmorphism, variants: elevated, interactive, compact
-│   ├── GlassButton.tsx         # Botón pill, variants: primary, secondary, danger; sizes: sm, md, lg
+├── components/ui/              # 16 componentes UI con Tailwind CSS
+│   ├── GlassDrawer.tsx         # Floating bottom drawer con glassmorphism
+│   ├── SearchBar.tsx           # Input de búsqueda con botón de voz
+│   ├── ScanBadge.tsx           # Badge del último producto escaneado
+│   ├── BottomNav.tsx           # Navegación inferior de 5 items
+│   ├── CameraOverlay.tsx       # Overlay de escaneo verde con corners animados
+│   ├── StockBadge.tsx          # Badge de stock color-coded
+│   ├── GlassCard.tsx           # Card glassmorphism reutilizable
 │   ├── GlassInput.tsx          # Input con label, icono, error state
-│   ├── GlassIconButton.tsx     # Botón circular glass puro
-│   ├── MicButton.tsx           # Botón de micrófono con estado listening (80px en NewProductPage, 50px por defecto, sin animación ripple)
-│   ├── CameraView.tsx          # Video feed + overlay de escaneo con corners animados
-│   ├── ProductImage.tsx        # Imagen con placeholder (Package icon)
-│   ├── Barcode.tsx             # Display de código de barras en pill
-│   ├── StockBadge.tsx          # Badge color-coded: low (rojo), medium (amarillo), high (verde)
-│   ├── VoiceWave.tsx           # 5 barras animadas de onda de voz (32px height, 4px width bars). aria-hidden
-│   ├── SuccessCheck.tsx        # Overlay con check verde animado + ripple + particle burst + haptic. Reusa estética de ripple/pulse
-│   ├── LoadingDots.tsx         # 3 puntos que rebotan + texto
-│   ├── PhoneFrame.tsx          # Contenedor responsive: full-screen en mobile, mockup teléfono centrado en desktop (max-width 480px, border-radius 44px). Fondo transparente para que el ambiente se vea
-│   ├── Toast.tsx               # Provider de toasts glass (context), apilados, icono, auto-dismiss, motion, aria-live="polite"
-│   ├── SplashScreen.tsx        # Intro de marca (logo + glow) con motion, una sola vez al cargar (~1.3s), respeta prefers-reduced-motion
-│   ├── Skeleton.tsx            # Skeleton loaders reutilizando el @keyframes shimmer existente
-│   ├── EmptyState.tsx          # Estado vacío reutilizable (icono lucide + título + subtítulo)
-│   └── ErrorBoundary.tsx       # Class error boundary con fallback glass + botón "Reintentar" (window.location.reload)
+│   ├── VoiceWave.tsx           # Barras animadas de onda de voz
+│   ├── SkeletonLoader.tsx      # Skeleton loader con shimmer
+│   ├── SuccessAnimation.tsx    # Overlay de éxito con check animado
+│   ├── Toast.tsx               # Sistema de toasts (ToastProvider + useToast)
+│   ├── EmptyState.tsx          # Estado vacío reutilizable
+│   ├── ErrorBoundary.tsx       # Class error boundary con fallback
+│   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile, mockup desktop)
+│   ├── SplashScreen.tsx        # Intro de marca con motion
+│   └── index.ts               # Barrel exports
 │
-└── pages/                      # 3 pantallas lazy-loaded
-    ├── SearchPage.tsx          # Ruta: / – TTS bienvenida + escaneo de cámara
-    ├── ProductPage.tsx         # Ruta: /product/:barcode – TTS lee producto con delay de 2s en confirmación, si no existe redirige a /new/:barcode
-    └── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard paso a paso (5 pasos) con STT por campo + TTS al guardar. Botón mic 80px, voice wave 32px
+└── pages/                      # 8 pantallas lazy-loaded
+    ├── ScanPage.tsx            # Ruta: / – Cámara + drawer flotante + bottom nav
+    ├── SearchPage.tsx          # Ruta: /search – Búsqueda semántica por voz/texto
+    ├── ProductPage.tsx         # Ruta: /product/:barcode – Detalle + movimiento por voz
+    ├── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard 5 pasos con STT
+    ├── ScanPageRedirect.tsx    # Ruta: /new – Redirect a escaneo aleatorio
+    ├── InventoryPage.tsx       # Ruta: /inventory – Placeholder "Próximamente"
+    ├── AnalyticsPage.tsx       # Ruta: /analytics – Placeholder "Próximamente"
+    └── ProfilePage.tsx         # Ruta: /profile – Placeholder "Próximamente"
 ```
 
 ---
@@ -94,10 +92,15 @@ src/
 ## Flujo de Navegación
 
 ```
-/                    → SearchPage (cámara + botón búsqueda + TTS "Apunta la cámara al código de barras")
+/                    → ScanPage (cámara + bottom drawer con búsqueda + nav)
+/search              → SearchPage (búsqueda semántica por voz o texto)
 /product/:barcode    → ProductPage (producto encontrado → registrar movimiento por voz)
                     → si no existe → redirige automáticamente a /new/:barcode
 /new/:barcode        → NewProductPage (wizard de 5 pasos: Nombre → Marca → Categoría → Presentación → Unidad)
+/new                 → ScanPageRedirect (simula escaneo aleatorio)
+/inventory           → InventoryPage (placeholder)
+/analytics           → AnalyticsPage (placeholder)
+/profile             → ProfilePage (placeholder)
 ```
 
 ### Nota sobre producto no encontrado
@@ -115,42 +118,50 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 
 ---
 
-## Capa de Pulido Visual / UX
+## Diseño Visual / UX
 
-Capa de presentación "pro" sobre el frontend existente. **No añade dependencias** (usa `motion`, `lucide-react`, CSS Modules y APIs nativas del navegador: `navigator.vibrate`, Web Audio ya usado, `prefers-reduced-motion`).
+### Tailwind CSS v4
+- **Design tokens personalizados**: colores (brand, success, error, warning, glass), animaciones (@keyframes)
+- **Glassmorphism**: clases de utilidad para backdrop-blur, bg-glass, border-glass
+- **Dark mode**: habilitado por defecto con clase `dark` en `<html>`
+- **Animaciones**: pulse-scan, wave-bar, shimmer, fade-in, slide-up, bounce-in, glow-pulse
 
 ### Fondo ambiente (profundidad)
-- `src/App.module.css` define una capa fija `.ambient` (detrás del `PhoneFrame`) con 3 "blobs"/aurora animados vía `@keyframes` (CSS `transform`/`opacity`). Respeta `prefers-reduced-motion` (degrada a estático, sin animar).
-- `PhoneFrame`, `CameraView`, y los `.page` de `SearchPage`/`ProductPage`/`NewProductPage` tienen `background: transparent` para que los blobs se vean (mobile full-screen y desktop). El `CameraView` usa fallback de "cámara no disponible" translúcido para que el ambiente asome en desktop.
+- `PhoneFrame.tsx` define 3 blobs animados (azul, verde, púrpura) con blur y animación CSS
+- Todos los componentes usan `background: transparent` para que el ambiente se vea
+- `CameraView` usa fallback translúcido (`bg-black/80`) para que el ambiente asome en desktop
 
 ### Splash / intro de marca
-- `src/components/SplashScreen.tsx`: logo + glow con `motion`, una sola vez al cargar (~1.3s) vía `setTimeout`, luego `AnimatePresence` lo funde. Con `prefers-reduced-motion` dura ~250ms y no anima.
+- `SplashScreen.tsx`: logo + glow con `motion`, una sola vez al cargar (~1.3s)
+- Con `prefers-reduced-motion` dura ~250ms y no anima
 
 ### Sistema de Toasts
-- `src/components/Toast.tsx` + `src/hooks/useToast.ts`: `ToastProvider` (context) + `useToast()`. Toasts glass apilados, icono (check/alert/info), auto-dismiss, animación `motion`, `aria-live="polite"`.
-- Migrado desde errores inline: `NewProductPage` (mantiene TTS dual: toast + habla el error) y `SearchPageText` (error de búsqueda → toast). `LoadingDots` se mantiene para loaders inline cortos.
+- `Toast.tsx` + `useToast.ts`: `ToastProvider` (context) + `useToast()`
+- Toasts glass apilados, icono (check/alert/info), auto-dismiss, animación `motion`, `aria-live="polite"`
 
 ### Skeleton loaders
-- `src/components/Skeleton.tsx` reusa el `@keyframes shimmer` **ya existente** (no lo redefine). Usado en `ProductPage` (`isLoading`) y `SearchPageText` (resultados cargando).
+- `SkeletonLoader.tsx`: utilidad de shimmer con Tailwind, variantes text/rect/circle
 
 ### Feedback háptico
-- `src/lib/haptics.ts`: wrapper de `navigator.vibrate(...)` con feature-check (`'vibrate' in navigator`) y no-op en desktop/https-fail. Usado en `CameraView.playScanBeep` (al escanear), `MicButton` (toggle), y `SuccessCheck` (al éxito, patrón `hapticSuccess`).
+- `haptics.ts`: wrapper de `navigator.vibrate(...)` con feature-check y no-op en desktop
+- Usado en `CameraOverlay`, `BottomNav`, y `SuccessAnimation`
 
 ### Error Boundary
-- `src/components/ErrorBoundary.tsx` (clase) con fallback glass + botón "Reintentar" (`window.location.reload()`). Envuelve el `BrowserRouter` en `App.tsx`.
+- `ErrorBoundary.tsx` (clase) con fallback glass + botón "Reintentar"
 
 ### Accesibilidad
-- `globals.css` añade `:focus-visible` global (outline con token de acento) para `MicButton`, `GlassIconButton` y botones crudos de páginas (GlassButton ya lo cubre vía `focusVisible`).
-- `VoiceWave` lleva `aria-hidden="true"`. Toasts `aria-live`. Animaciones JS (`Splash`, `Toast`, `SuccessCheck`) usan `useReducedMotion()` de `motion/react` para saltar/acortar motion cuando está activo (el bloque CSS `prefers-reduced-motion` solo anula animaciones CSS, no las de `motion`).
+- `VoiceWave` lleva `aria-hidden="true"`
+- Toasts `aria-live="polite"`
+- Animaciones usan `prefers-reduced-motion` para degradar
 
 ### Momento de éxito
-- `SuccessCheck`: agrega "particle burst" ligero con `motion` (6 partículas) + haptic. Reusa estética de `ripple`/`pulse`. Sin librerías.
+- `SuccessAnimation.tsx`: check verde animado + ripple + particle burst + haptic
 
 ### Empty states
-- `src/components/EmptyState.tsx` (icono lucide + título + subtítulo). Refactoriza el empty state inline de `SearchPageText`.
+- `EmptyState.tsx`: icono lucide + título + subtítulo, reutilizable
 
 ### PWA manifest
-- `public/manifest.webmanifest` apunta a `public/favicon.svg` y `public/icons.svg` ya existentes (sin service worker, respeta "sin offline"). `index.html` referencia `<link rel="icon">` y `<link rel="manifest">`.
+- `public/manifest.webmanifest` apunta a `public/favicon.svg` y `public/icons.svg`
 
 ---
 
@@ -489,12 +500,12 @@ CORS_ORIGINS=https://app.vercel.app  # Optional - default: *
 ## Comandos
 
 ```bash
-# Frontend
-npm install          # Instalar dependencias
-npm run dev          # Desarrollo en http://localhost:5173
-npm run build        # Build de producción
-npm run lint         # Linting con oxlint
-npm run preview      # Preview del build
+# Frontend (usar pnpm)
+pnpm install          # Instalar dependencias
+pnpm run dev          # Desarrollo en http://localhost:5173
+pnpm run build        # Build de producción
+pnpm run lint         # Linting con oxlint
+pnpm run preview      # Preview del build
 
 # Backend (cuando exista)
 pip install -r requirements.txt
@@ -520,7 +531,7 @@ uvicorn main:app --reload --port 8000
 
 ## Testing del Frontend
 
-Para probar el frontend sin backend, ejecutar `npm run dev` y usar los mock data que están en `src/constants.ts`. El SearchPage simula escaneos aleatorios de los 5 productos mock.
+Para probar el frontend sin backend, ejecutar `pnpm run dev` y usar los mock data que están en `src/constants.ts`. El `ScanPage` simula escaneos aleatorios de los 5 productos mock.
 
 **TTS/STT en desarrollo**: Sin backend, los hooks `useTTS` y `useSTT` fallback automáticamente a las APIs nativas del navegador (`window.speechSynthesis` y `SpeechRecognition`). No requieren configuración adicional.
 
@@ -537,8 +548,8 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-8. **Mobile responsive**: Las páginas usan CSS compacto con `min-height: 0` en contenedores flex, `env(safe-area-inset-bottom)` para notch, tamaños de imagen reducidos vía media queries `max-height: 700px`, y spacing fluido con `clamp()`.
+8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado).
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
-10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 15s para cold-starts de Render.
+10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
-12. **Fondo ambiente depende de backgrounds transparentes**: `PhoneFrame`, `CameraView` y los `.page` de `SearchPage`/`ProductPage`/`NewProductPage` son `transparent` a propósito para que el fondo animado (`.ambient` en `App.module.css`) se vea. No cambiar estos `background` a colores opacos sin re-evaluar la capa ambiente. El `CameraView` usa un fallback translúcido (`rgba(10,10,15,0.55)`) en lugar de `#000` para que el ambiente asome en desktop (sin cámara).
+12. **Fondo ambiente**: `PhoneFrame.tsx` define 3 blobs animados (azul, verde, púrpura) con blur. Todos los componentes usan `background: transparent` para que el ambiente se vea. El `CameraView` usa fallback translúcido (`bg-black/80`) para que el ambiente asome en desktop (sin cámara).
