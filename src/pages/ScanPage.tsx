@@ -59,15 +59,15 @@ export function ScanPage() {
   }
 
   return (
-    <div className="relative min-h-dvh lg:h-full flex flex-col bg-transparent">
+    <div className="relative h-full flex flex-col bg-transparent">
       {/* Camera feed */}
-      <div className="absolute inset-0 bg-black/80">
+      <div className="relative flex-1 bg-black/80 overflow-hidden">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Fallback when no camera */}
         {!isActive && (
@@ -75,27 +75,27 @@ export function ScanPage() {
             <p className="text-white/50 text-sm">Cámara no disponible</p>
           </div>
         )}
-      </div>
 
-      {/* Scanning overlay */}
-      <CameraOverlay isActive={!isScanning} />
+        {/* Scanning overlay */}
+        <CameraOverlay isActive={!isScanning} />
 
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-2">
-        <h1 className="text-white text-lg font-bold tracking-tight">
-          VoiceInvenXi
-        </h1>
-        <button
-          onClick={handleSimulateScan}
-          className="
-            px-3 py-1.5 rounded-full
-            bg-white/10 hover:bg-white/15
-            text-white/80 text-xs font-medium
-            transition-colors duration-200
-          "
-        >
-          Simular escaneo
-        </button>
+        {/* Top bar */}
+        <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-2">
+          <h1 className="text-white text-lg font-bold tracking-tight">
+            VoiceInvenXi
+          </h1>
+          <button
+            onClick={handleSimulateScan}
+            className="
+              px-3 py-1.5 rounded-full
+              bg-white/10 hover:bg-white/15
+              text-white/80 text-xs font-medium
+              transition-colors duration-200
+            "
+          >
+            Simular escaneo
+          </button>
+        </div>
       </div>
 
       {/* Bottom drawer */}

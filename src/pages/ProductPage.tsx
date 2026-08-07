@@ -81,7 +81,7 @@ export function ProductPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-dvh lg:h-full flex flex-col bg-transparent">
+      <div className="h-full flex flex-col bg-transparent">
         <div className="flex items-center gap-3 px-4 pt-4 pb-2">
           <button
             onClick={() => navigate('/')}
@@ -104,7 +104,7 @@ export function ProductPage() {
   if (!product) return null
 
   return (
-    <div className="min-h-dvh lg:h-full flex flex-col bg-transparent">
+    <div className="h-full flex flex-col bg-transparent">
       {showSuccess && (
         <SuccessAnimation
           message="Movimiento registrado"

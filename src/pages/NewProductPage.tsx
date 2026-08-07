@@ -121,7 +121,7 @@ export function NewProductPage() {
   const step = STEPS[currentStep]
 
   return (
-    <div className="min-h-dvh lg:h-full flex flex-col bg-transparent">
+    <div className="h-full flex flex-col bg-transparent">
       {showSuccess && (
         <SuccessAnimation
           message="Producto creado"

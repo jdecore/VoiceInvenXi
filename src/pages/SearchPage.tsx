@@ -57,7 +57,7 @@ export function SearchPage() {
   }
 
   return (
-    <div className="min-h-dvh lg:h-full flex flex-col bg-transparent">
+    <div className="h-full flex flex-col bg-transparent">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button
