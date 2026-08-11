@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { User } from 'lucide-react'
-import { EmptyState, BottomNav } from '@/components/ui'
+import { EmptyState, TelegramNav } from '@/components/ui'
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -18,7 +18,7 @@ export function ProfilePage() {
         <h1 className="text-white text-lg font-semibold">Perfil</h1>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-24">
+      <div className="flex-1 flex items-center justify-center px-4 pb-32">
         <EmptyState
           icon={<User className="w-8 h-8 text-white/30" />}
           title="Tu perfil"
@@ -26,9 +26,7 @@ export function ProfilePage() {
         />
       </div>
 
-      <div className="relative z-20">
-        <BottomNav />
-      </div>
+      <TelegramNav />
     </div>
   )
 }

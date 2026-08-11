@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { CameraOverlay, GlassDrawer, SearchBar, ScanBadge, BottomNav, useToast } from '@/components/ui'
+import { CameraOverlay, GlassDrawer, SearchBar, ScanBadge, TelegramNav, useToast } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -115,9 +115,9 @@ export function ScanPage() {
             type={lastScanned.type}
           />
         )}
-
-        <BottomNav />
       </GlassDrawer>
+
+      <TelegramNav />
     </div>
   )
 }

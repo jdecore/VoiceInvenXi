@@ -180,7 +180,7 @@ export function NewProductPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      <div className="flex-1 overflow-y-auto px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={step.key}
@@ -246,41 +246,41 @@ export function NewProductPage() {
             </GlassCard>
           </motion.div>
         </AnimatePresence>
+      </div>
 
-        {/* Navigation */}
-        <div className="flex gap-3 mt-4">
-          {currentStep > 0 && (
-            <button
-              onClick={handleBack}
-              className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white/70 font-medium transition-colors"
-            >
-              Atrás
-            </button>
-          )}
+      {/* Navigation - always visible at bottom */}
+      <div className="flex gap-3 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
+        {currentStep > 0 && (
           <button
-            onClick={handleNext}
-            disabled={isSaving}
-            className={`
-              flex-1 py-3 rounded-xl font-medium
-              flex items-center justify-center gap-2
-              transition-all duration-200
-              ${currentStep === STEPS.length - 1
-                ? 'bg-[#2ECC71] hover:bg-[#27AE60] text-white'
-                : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] text-white'
-              }
-              disabled:opacity-50
-            `}
+            onClick={handleBack}
+            className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white/70 font-medium transition-colors"
           >
-            {currentStep === STEPS.length - 1 ? (
-              <>
-                <Check className="w-5 h-5" />
-                {isSaving ? 'Guardando...' : 'Guardar'}
-              </>
-            ) : (
-              'Siguiente'
-            )}
+            Atrás
           </button>
-        </div>
+        )}
+        <button
+          onClick={handleNext}
+          disabled={isSaving}
+          className={`
+            flex-1 py-3 rounded-xl font-medium
+            flex items-center justify-center gap-2
+            transition-all duration-200
+            ${currentStep === STEPS.length - 1
+              ? 'bg-[#2ECC71] hover:bg-[#27AE60] text-white'
+              : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] text-white'
+            }
+            disabled:opacity-50
+          `}
+        >
+          {currentStep === STEPS.length - 1 ? (
+            <>
+              <Check className="w-5 h-5" />
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </>
+          ) : (
+            'Siguiente'
+          )}
+        </button>
       </div>
     </div>
   )

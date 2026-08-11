@@ -8,7 +8,7 @@ const SearchPage = lazy(() => import('@/pages/SearchPage').then(m => ({ default:
 const ProductPage = lazy(() => import('@/pages/ProductPage').then(m => ({ default: m.ProductPage })))
 const NewProductPage = lazy(() => import('@/pages/NewProductPage').then(m => ({ default: m.NewProductPage })))
 const InventoryPage = lazy(() => import('@/pages/InventoryPage').then(m => ({ default: m.InventoryPage })))
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const ActivityPage = lazy(() => import('@/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const ScanPageRedirect = lazy(() => import('@/pages/ScanPageRedirect').then(m => ({ default: m.ScanPageRedirect })))
 
@@ -45,7 +45,7 @@ export default function App() {
                   <Route path="/new/:barcode" element={<NewProductPage />} />
                   <Route path="/new" element={<ScanPageRedirect />} />
                   <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/activity" element={<ActivityPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                 </Routes>
               </Suspense>

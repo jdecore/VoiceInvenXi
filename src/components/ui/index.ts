@@ -1,7 +1,7 @@
 export { GlassDrawer } from './GlassDrawer'
 export { SearchBar } from './SearchBar'
 export { ScanBadge } from './ScanBadge'
-export { BottomNav } from './BottomNav'
+export { TelegramNav } from './TelegramNav'
 export { CameraOverlay } from './CameraOverlay'
 export { StockBadge } from './StockBadge'
 export { SkeletonLoader } from './SkeletonLoader'

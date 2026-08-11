@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { ArrowLeft, Package } from 'lucide-react'
-import { EmptyState, BottomNav } from '@/components/ui'
+import { EmptyState, TelegramNav } from '@/components/ui'
 
 export function InventoryPage() {
   const navigate = useNavigate()
@@ -17,7 +17,7 @@ export function InventoryPage() {
         <h1 className="text-white text-lg font-semibold">Inventario</h1>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-24">
+      <div className="flex-1 flex items-center justify-center px-4 pb-32">
         <EmptyState
           icon={<Package className="w-8 h-8 text-white/30" />}
           title="Inventario completo"
@@ -25,9 +25,7 @@ export function InventoryPage() {
         />
       </div>
 
-      <div className="relative z-20">
-        <BottomNav />
-      </div>
+      <TelegramNav />
     </div>
   )
 }

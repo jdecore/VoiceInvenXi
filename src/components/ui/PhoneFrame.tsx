@@ -20,7 +20,8 @@ export function PhoneFrame({ children }: PhoneFrameProps) {
         h-full w-full min-h-dvh
         lg:h-[844px] lg:min-h-0 lg:max-w-[480px] lg:rounded-[44px] lg:border lg:border-white/10
         lg:shadow-[0_20px_80px_rgba(0,0,0,0.5)]
-        overflow-hidden
+        overflow-x-hidden overflow-y-auto
+        scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20
         bg-transparent
       ">
         {children}
