@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { CameraOverlay, GlassDrawer, SearchBar, ScanBadge, TelegramNav, useToast } from '@/components/ui'
+import { CameraOverlay, GlassDrawer, ScanBadge, TelegramNav } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -8,11 +8,9 @@ import { MOCK_PRODUCTS } from '@/constants'
 
 export function ScanPage() {
   const navigate = useNavigate()
-  const { showToast } = useToast()
   const { videoRef, isActive, start, stop } = useCamera()
   const { speak } = useTTS()
   const [lastScanned] = useState<{ name: string; quantity: number; type: 'in' | 'out' } | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const scanCooldown = useRef(false)
 
@@ -40,18 +38,6 @@ export function ScanPage() {
       }, 3000)
     }
   }, [navigate])
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      showToast({ variant: 'info', message: 'Escribe algo para buscar' })
-      return
-    }
-    navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
-  }
-
-  const handleVoiceSearch = () => {
-    navigate('/search?voice=true')
-  }
 
   const handleSimulateScan = () => {
     const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)]
@@ -100,14 +86,6 @@ export function ScanPage() {
 
       {/* Bottom drawer */}
       <GlassDrawer className="z-20">
-        <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onVoiceClick={handleVoiceSearch}
-          onSearch={handleSearch}
-          placeholder="Buscar por voz o texto..."
-        />
-
         {lastScanned && (
           <ScanBadge
             productName={lastScanned.name}

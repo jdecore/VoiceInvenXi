@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Search, Mic } from 'lucide-react'
 import { motion } from 'motion/react'
-import { GlassCard, SearchBar, VoiceWave, SkeletonLoader, EmptyState, useToast } from '@/components/ui'
+import { GlassCard, TelegramNav, VoiceWave, SkeletonLoader, EmptyState, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
 import type { SemanticSearchResult } from '@/types'
@@ -11,7 +11,7 @@ export function SearchPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { showToast } = useToast()
-  const { isListening, transcript, interimTranscript, start, isSupported, error } = useSTT()
+  const { isListening, transcript, interimTranscript, start, stop, isSupported, error } = useSTT()
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SemanticSearchResult[]>([])
@@ -48,8 +48,12 @@ export function SearchPage() {
     }
   }
 
-  const handleSearch = () => {
-    performSearch(query)
+  const handleMic = () => {
+    if (isListening) {
+      stop()
+    } else {
+      start()
+    }
   }
 
   const handleResultClick = (result: SemanticSearchResult) => {
@@ -69,23 +73,45 @@ export function SearchPage() {
         <h1 className="text-white text-lg font-semibold flex-1">Búsqueda</h1>
       </div>
 
-      {/* Search bar */}
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        onVoiceClick={() => isSupported && start()}
-        onSearch={handleSearch}
-        isListening={isListening}
-        placeholder="Describe lo que buscas..."
-      />
+      {/* Mic button */}
+      {isSupported && (
+        <div className="flex flex-col items-center gap-3 px-4 py-4">
+          <button
+            onClick={handleMic}
+            className={`
+              w-20 h-20 rounded-full
+              flex items-center justify-center
+              transition-all duration-300
+              ${isListening
+                ? 'bg-[#FF5A5F] shadow-[0_0_40px_rgba(255,90,95,0.5)] animate-pulse-scan'
+                : 'bg-[#4F8CFF] hover:bg-[#3A6FD8] shadow-[0_4px_24px_rgba(79,140,255,0.4)]'
+              }
+            `}
+          >
+            <Mic className="w-8 h-8 text-white" />
+          </button>
+          <p className="text-white/50 text-sm text-center">
+            {isListening
+              ? interimTranscript || 'Di algo para buscar...'
+              : 'Toca para buscar por voz'}
+          </p>
+        </div>
+      )}
 
       {/* Voice feedback */}
       {isListening && (
         <div className="flex flex-col items-center gap-2 px-4 pb-4">
           <VoiceWave active={isListening} />
-          <p className="text-white/60 text-sm">
-            {interimTranscript || 'Escuchando...'}
-          </p>
+        </div>
+      )}
+
+      {/* Query display */}
+      {query && !isListening && (
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.06]">
+            <Search className="w-4 h-4 text-white/40" />
+            <span className="text-white/70 text-sm">{query}</span>
+          </div>
         </div>
       )}
 
@@ -97,7 +123,7 @@ export function SearchPage() {
       )}
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-32">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -145,10 +171,12 @@ export function SearchPage() {
           <EmptyState
             icon={<Search className="w-8 h-8 text-white/30" />}
             title="Busca productos"
-            description="Escribe o usa el micrófono para buscar por similitud"
+            description="Toca el micrófono y di lo que buscas"
           />
         )}
       </div>
+
+      <TelegramNav hideMic />
     </div>
   )
 }
