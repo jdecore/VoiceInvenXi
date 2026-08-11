@@ -1,5 +1,5 @@
 import { API_BASE, findMockProduct } from './constants'
-import type { ApiResponse, Product, SemanticSearchResponse } from './types'
+import type { ApiResponse, Product, Movement, SemanticSearchResponse, CreateProductDTO, CreateMovementDTO } from './types'
 
 async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`
@@ -28,6 +28,14 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const productApi = {
+  list: async (): Promise<Product[]> => {
+    try {
+      return await fetcher<Product[]>('/api/products')
+    } catch {
+      return []
+    }
+  },
+
   getByBarcode: async (barcode: string): Promise<Product> => {
     try {
       return await fetcher<Product>(`/api/products/${barcode}`)
@@ -38,7 +46,7 @@ export const productApi = {
     }
   },
 
-  create: async (data: import('./types').CreateProductDTO): Promise<Product> => {
+  create: async (data: CreateProductDTO): Promise<Product> => {
     return await fetcher<Product>('/api/products', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -47,8 +55,16 @@ export const productApi = {
 }
 
 export const movementApi = {
-  create: async (data: import('./types').CreateMovementDTO): Promise<import('./types').Movement> => {
-    return await fetcher<import('./types').Movement>('/api/movements', {
+  list: async (): Promise<Movement[]> => {
+    try {
+      return await fetcher<Movement[]>('/api/movements')
+    } catch {
+      return []
+    }
+  },
+
+  create: async (data: CreateMovementDTO): Promise<Movement> => {
+    return await fetcher<Movement>('/api/movements', {
       method: 'POST',
       body: JSON.stringify(data),
     })

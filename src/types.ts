@@ -2,10 +2,10 @@ export interface Product {
   id: string
   barcode: string
   name: string
-  brand: string
-  category: string
-  presentation: string
-  unit: string
+  brand: string | null
+  category: string | null
+  presentation: string | null
+  unit: string | null
   stock: number
   imageUrl: string | null
 }
@@ -13,10 +13,10 @@ export interface Product {
 export interface CreateProductDTO {
   barcode: string
   name: string
-  brand: string
-  category: string
-  presentation: string
-  unit: string
+  brand?: string
+  category?: string
+  presentation?: string
+  unit?: string
 }
 
 export interface Movement {
@@ -38,10 +38,6 @@ export interface ApiResponse<T> {
   success: boolean
   message?: string
 }
-
-export type GlassVariant = 'primary' | 'secondary' | 'danger'
-
-export type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface SemanticSearchResult {
   id: string

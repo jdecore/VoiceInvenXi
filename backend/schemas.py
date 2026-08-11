@@ -58,6 +58,10 @@ class MovementResponse(BaseModel):
         return data
 
 
+class MovementWithProductResponse(MovementResponse):
+    productName: str | None = None
+
+
 class ApiResponse(BaseModel):
     success: bool
     data: dict | list | None = None

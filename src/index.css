@@ -1,44 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #4F8CFF;
-  --color-brand-light: #7BA8FF;
-  --color-brand-dark: #3A6FD8;
+  --color-brand: #F97316;
+  --color-brand-light: #FB923C;
+  --color-brand-dark: #EA580C;
+  --color-brand-container: #FFEDD5;
+  --color-on-brand-container: #7C2D12;
 
-  --color-success: #2ECC71;
-  --color-success-dark: #27AE60;
+  --color-surface: #FAFAFA;
+  --color-surface-1: #F5F5F5;
+  --color-surface-2: #EEEEEE;
+  --color-surface-3: #E0E0E0;
+  --color-surface-4: #D6D6D6;
+  --color-surface-5: #C4C4C4;
 
-  --color-error: #FF5A5F;
-  --color-error-dark: #E0484D;
+  --color-on-surface: #1C1B1F;
+  --color-on-surface-variant: #49454F;
+  --color-on-surface-muted: #79747E;
 
-  --color-warning: #FFB347;
+  --color-outline: #79747E;
+  --color-outline-variant: #CAC4D0;
 
-  --color-surface: #12121A;
-  --color-surface-light: #1A1A25;
-
-  --color-glass: rgba(255, 255, 255, 0.08);
-  --color-glass-hover: rgba(255, 255, 255, 0.14);
-  --color-glass-border: rgba(255, 255, 255, 0.15);
-  --color-glass-border-hover: rgba(255, 255, 255, 0.28);
+  --color-success: #2E7D32;
+  --color-success-container: #E8F5E9;
+  --color-error: #B3261E;
+  --color-error-container: #FDECEA;
+  --color-warning: #ED6C02;
+  --color-warning-container: #FFF3E0;
 
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  --animate-pulse-scan: pulse-scan 2s ease-in-out infinite;
+  --animate-pulse-mic: pulse-mic 1.5s ease-in-out infinite;
   --animate-wave-bar: wave-bar 1.2s ease-in-out infinite;
   --animate-shimmer: shimmer 1.5s ease-in-out infinite;
-  --animate-fade-in: fade-in 0.3s ease-out;
-  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-bounce-in: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-scale-in: scale-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes pulse-scan {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+@keyframes pulse-mic {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); }
 }
 
 @keyframes wave-bar {
   0%, 100% { height: 4px; }
-  50% { height: 24px; }
+  50% { height: 20px; }
 }
 
 @keyframes shimmer {
@@ -52,13 +59,24 @@
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes bounce-in {
-  from { opacity: 0; transform: scale(0.8); }
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-1deg); }
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes scan-line {
@@ -67,8 +85,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); }
-  50% { box-shadow: 0 0 40px rgba(46, 204, 113, 0.8); }
+  0%, 100% { box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(46, 204, 113, 0.6); }
 }
 
 * {
@@ -79,8 +97,8 @@
 
 html, body, #root {
   width: 100%;
-  background: #0a0a0f;
-  color: #ffffff;
+  background: #FAFAFA;
+  color: #1C1B1F;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -114,17 +132,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: #CAC4D0;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #79747E;
 }
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: #CAC4D0 transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -132,11 +150,5 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@supports (backdrop-filter: blur(20px)) {
-  .glass {
-    backdrop-filter: blur(20px) saturate(180%);
   }
 }

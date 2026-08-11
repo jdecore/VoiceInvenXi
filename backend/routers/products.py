@@ -8,6 +8,16 @@ from schemas import ProductCreate, ProductResponse, ApiResponse
 router = APIRouter(prefix="/api/products", tags=["products"])
 
 
+@router.get("")
+async def list_products(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Product).order_by(Product.name))
+    products = result.scalars().all()
+    return ApiResponse(
+        success=True,
+        data=[ProductResponse.model_validate(p).model_dump(by_alias=True) for p in products],
+    )
+
+
 @router.get("/{barcode}")
 async def get_product_by_barcode(barcode: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).where(Product.barcode == barcode))

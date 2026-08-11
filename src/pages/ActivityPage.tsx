@@ -1,12 +1,12 @@
-import { useNavigate } from 'react-router'
-import { ArrowLeft, Activity, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
-import { EmptyState, TelegramNav } from '@/components/ui'
+import { useState, useEffect } from 'react'
+import { ArrowUpCircle, ArrowDownCircle, Activity } from 'lucide-react'
+import { PageLayout, Header, Card, NavBar, EmptyState, Skeleton } from '@/components/ui'
+import { movementApi } from '@/api'
+import type { Movement } from '@/types'
 
-const MOCK_MOVEMENTS = [
-  { id: '1', productName: 'Aceite de Oliva Extra Virgen', quantity: 20, type: 'in' as const, createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
-  { id: '2', productName: 'Arroz Largo Fino', quantity: 5, type: 'out' as const, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-  { id: '3', productName: 'Leche Entera', quantity: 30, type: 'in' as const, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-]
+interface MovementWithProduct extends Movement {
+  productName: string
+}
 
 function formatTimeAgo(dateString: string): string {
   const now = new Date()
@@ -23,63 +23,80 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export function ActivityPage() {
-  const navigate = useNavigate()
+  const [movements, setMovements] = useState<MovementWithProduct[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    loadMovements()
+  }, [])
+
+  const loadMovements = async () => {
+    try {
+      const data = await movementApi.list()
+      setMovements(data as MovementWithProduct[])
+    } catch {
+      setMovements([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <div className="h-full flex flex-col bg-transparent overflow-hidden">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-white/70" />
-        </button>
-        <h1 className="text-white text-lg font-semibold">Actividad</h1>
-      </div>
+    <PageLayout>
+      <Header title="Actividad" />
 
       <div className="flex-1 overflow-y-auto px-4 pb-32">
-        {MOCK_MOVEMENTS.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <EmptyState
-              icon={<Activity className="w-8 h-8 text-white/30" />}
-              title="Sin actividad"
-              description="Los movimientos de stock aparecerán aquí"
-            />
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
           </div>
+        ) : movements.length === 0 ? (
+          <EmptyState
+            icon={<Activity className="w-8 h-8 text-on-surface-muted" />}
+            title="Sin actividad"
+            description="Los movimientos de stock aparecerán aquí"
+          />
         ) : (
           <div className="space-y-2">
-            {MOCK_MOVEMENTS.map((movement) => (
-              <div
-                key={movement.id}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.06]"
-              >
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  movement.type === 'in' 
-                    ? 'bg-emerald-500/15 text-emerald-400' 
-                    : 'bg-rose-500/15 text-rose-400'
-                }`}>
-                  {movement.type === 'in' ? (
-                    <ArrowDownCircle className="w-5 h-5" />
-                  ) : (
-                    <ArrowUpCircle className="w-5 h-5" />
-                  )}
+            {movements.map((movement) => (
+              <Card key={movement.id}>
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                    movement.type === 'in'
+                      ? 'bg-success-container'
+                      : 'bg-error-container'
+                  }`}>
+                    {movement.type === 'in' ? (
+                      <ArrowDownCircle className="w-5 h-5 text-success" />
+                    ) : (
+                      <ArrowUpCircle className="w-5 h-5 text-error" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-on-surface text-sm font-medium truncate">
+                      {movement.productName}
+                    </p>
+                    <p className="text-on-surface-muted text-xs">
+                      {formatTimeAgo(movement.createdAt)}
+                    </p>
+                  </div>
+                  <span className={`text-sm font-semibold ${
+                    movement.type === 'in' ? 'text-success' : 'text-error'
+                  }`}>
+                    {movement.type === 'in' ? '+' : '-'}{movement.quantity}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{movement.productName}</p>
-                  <p className="text-white/40 text-xs">{formatTimeAgo(movement.createdAt)}</p>
-                </div>
-                <span className={`text-sm font-semibold ${
-                  movement.type === 'in' ? 'text-emerald-400' : 'text-rose-400'
-                }`}>
-                  {movement.type === 'in' ? '+' : '-'}{movement.quantity}
-                </span>
-              </div>
+              </Card>
             ))}
           </div>
         )}
       </div>
 
-      <TelegramNav />
-    </div>
+      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+        <NavBar />
+      </div>
+    </PageLayout>
   )
 }

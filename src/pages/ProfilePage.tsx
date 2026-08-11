@@ -1,32 +1,73 @@
-import { useNavigate } from 'react-router'
-import { ArrowLeft } from 'lucide-react'
-import { User } from 'lucide-react'
-import { EmptyState, TelegramNav } from '@/components/ui'
+import { User, Settings, Bell, HelpCircle, LogOut } from 'lucide-react'
+import { PageLayout, Header, Card, NavBar } from '@/components/ui'
 
 export function ProfilePage() {
-  const navigate = useNavigate()
-
   return (
-    <div className="h-full flex flex-col bg-transparent overflow-hidden">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-white/70" />
-        </button>
-        <h1 className="text-white text-lg font-semibold">Perfil</h1>
+    <PageLayout>
+      <Header title="Perfil" showBack={false} />
+
+      <div className="flex-1 overflow-y-auto px-4 pb-32">
+        <div className="flex flex-col items-center py-6">
+          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-brand-container mb-4">
+            <User className="w-10 h-10 text-brand" />
+          </div>
+          <h2 className="text-on-surface text-xl font-semibold">Operario</h2>
+          <p className="text-on-surface-muted text-sm"> Administrador</p>
+        </div>
+
+        <div className="space-y-2">
+          <Card interactive onClick={() => {}}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
+                <Settings className="w-5 h-5 text-on-surface-variant" />
+              </div>
+              <div className="flex-1">
+                <p className="text-on-surface font-medium">Configuración</p>
+                <p className="text-on-surface-muted text-sm">Preferencias de la app</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card interactive onClick={() => {}}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
+                <Bell className="w-5 h-5 text-on-surface-variant" />
+              </div>
+              <div className="flex-1">
+                <p className="text-on-surface font-medium">Notificaciones</p>
+                <p className="text-on-surface-muted text-sm">Gestionar alertas</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card interactive onClick={() => {}}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
+                <HelpCircle className="w-5 h-5 text-on-surface-variant" />
+              </div>
+              <div className="flex-1">
+                <p className="text-on-surface font-medium">Ayuda</p>
+                <p className="text-on-surface-muted text-sm">Soporte y documentación</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card interactive onClick={() => {}}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-error-container">
+                <LogOut className="w-5 h-5 text-error" />
+              </div>
+              <div className="flex-1">
+                <p className="text-error font-medium">Cerrar sesión</p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-32">
-        <EmptyState
-          icon={<User className="w-8 h-8 text-white/30" />}
-          title="Tu perfil"
-          description="Próximamente podrás configurar tu cuenta, preferencias de voz y más"
-        />
+      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+        <NavBar />
       </div>
-
-      <TelegramNav />
-    </div>
+    </PageLayout>
   )
 }

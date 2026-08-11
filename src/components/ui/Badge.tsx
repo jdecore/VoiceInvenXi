@@ -1,12 +1,12 @@
 import { Package } from 'lucide-react'
 
-interface StockBadgeProps {
+interface BadgeProps {
   stock: number
   unit?: string | null
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md'
 }
 
-export function StockBadge({ stock, unit = 'Unidad', size = 'md' }: StockBadgeProps) {
+export function Badge({ stock, unit = 'Unidad', size = 'sm' }: BadgeProps) {
   const getColor = () => {
     if (stock === 0) return 'bg-error-container text-error border-error/20'
     if (stock <= 10) return 'bg-warning-container text-warning border-warning/20'
@@ -14,11 +14,11 @@ export function StockBadge({ stock, unit = 'Unidad', size = 'md' }: StockBadgePr
   }
 
   const getSize = () => {
-    switch (size) {
-      case 'sm': return 'px-2 py-0.5 text-xs gap-1'
-      case 'md': return 'px-3 py-1 text-sm gap-1.5'
-      case 'lg': return 'px-4 py-1.5 text-base gap-2'
-    }
+    return size === 'sm' ? 'px-2 py-0.5 text-xs gap-1' : 'px-3 py-1 text-sm gap-1.5'
+  }
+
+  const getIconSize = () => {
+    return size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'
   }
 
   return (
@@ -26,7 +26,7 @@ export function StockBadge({ stock, unit = 'Unidad', size = 'md' }: StockBadgePr
       inline-flex items-center font-medium rounded-full border
       ${getColor()} ${getSize()}
     `}>
-      <Package className={size === 'sm' ? 'w-3 h-3' : size === 'md' ? 'w-4 h-4' : 'w-5 h-5'} />
+      <Package className={getIconSize()} />
       {stock} {unit}
     </span>
   )

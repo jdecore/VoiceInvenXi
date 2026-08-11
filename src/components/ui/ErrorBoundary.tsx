@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { Button } from './Button'
 
 interface Props {
   children: ReactNode
@@ -16,34 +17,28 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, error: null }
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error }
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full bg-[#0a0a0f] p-6 text-center">
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[#FF5A5F]/20 border border-[#FF5A5F]/30 mb-4">
-            <AlertTriangle className="w-8 h-8 text-[#FF5A5F]" />
+        <div className="flex flex-col items-center justify-center h-full bg-surface px-6">
+          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-error-container mb-4">
+            <AlertTriangle className="w-8 h-8 text-error" />
           </div>
-          <h2 className="text-white text-lg font-semibold mb-2">
-            Algo salió mal
-          </h2>
-          <p className="text-white/60 text-sm mb-6 max-w-[280px]">
+          <h2 className="text-on-surface text-lg font-semibold">Algo salió mal</h2>
+          <p className="text-on-surface-muted text-sm mt-1 text-center max-w-[280px]">
             {this.state.error?.message || 'Error inesperado'}
           </p>
-          <button
+          <Button
+            variant="filled"
+            className="mt-6"
             onClick={() => window.location.reload()}
-            className="
-              px-6 py-2.5 rounded-full
-              bg-[#4F8CFF] hover:bg-[#3A6FD8]
-              text-white text-sm font-semibold
-              transition-colors duration-200
-            "
           >
             Reintentar
-          </button>
+          </Button>
         </div>
       )
     }

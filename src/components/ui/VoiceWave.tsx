@@ -10,17 +10,13 @@ export function VoiceWave({ active = false, bars = 5 }: VoiceWaveProps) {
         <div
           key={i}
           className={`
-            w-1 rounded-full
-            ${active ? 'bg-[#4F8CFF] animate-wave-bar' : 'bg-white/20 h-1'}
+            w-1 rounded-full transition-all duration-150
+            ${active
+              ? 'bg-brand animate-wave-bar'
+              : 'bg-surface-3 h-1'
+            }
           `}
-          style={
-            active
-              ? {
-                  animationDelay: `${i * 0.15}s`,
-                  height: '4px',
-                }
-              : undefined
-          }
+          style={active ? { animationDelay: `${i * 0.15}s` } : undefined}
         />
       ))}
     </div>
