@@ -86,20 +86,20 @@ export function ScanPage() {
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-white text-lg font-bold drop-shadow-md">VoiceInvenXi</h1>
+          <h1 className="text-white text-lg font-bold drop-shadow-md pl-[10%]">VoiceInvenXi</h1>
           <button
             onClick={handleSimulateScan}
             className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
               text-on-surface text-xs font-medium shadow-sm
-              hover:bg-white transition-colors"
+              hover:bg-white transition-colors mr-[10%]"
           >
-            Simular escaneo
+            Activo
           </button>
         </div>
       </div>
 
-      {/* Bottom nav area - floating over camera */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-3 px-4 py-4 pb-[env(safe-area-inset-bottom)]">
+      {/* Bottom nav area - floating over camera, moved up 15% */}
+      <div className="absolute bottom-[15%] left-0 right-0 z-20 flex items-center justify-center gap-3 px-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
         <FAB onClick={handleMic} />
       </div>

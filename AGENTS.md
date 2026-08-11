@@ -31,10 +31,9 @@ La app es full-screen y se adapta a cualquier dispositivo de forma automática:
 
 - **Mobile** (`< 1024px`): llena 100% del viewport dinámico (`100dvh`), sin bordes ni sombras, sin max-width
 - **Desktop** (`≥ 1024px`): mockup centrado de teléfono (480x844px) con border-radius 44px, borde sutil y sombra
-- **Safe areas**: soporte automático para iPhones con notch/Dynamic Island via `env(safe-area-inset-*)` en html + `pb-[env(safe-area-inset-bottom)]` en GlassDrawer
+- **Safe areas**: soporte automático para iPhones con notch/Dynamic Island via `env(safe-area-inset-*)` en html + `pb-[env(safe-area-inset-bottom)]` en navegación
 - **Viewport meta**: `viewport-fit=cover` habilitado para llenar toda la pantalla
 - **Dynamic viewport**: usa `100dvh` (dynamic viewport height) en html/body/PhoneFrame para adaptarse al chrome del navegador móvil (barra de URL, home indicator)
-- **Tailwind CSS v4**: utilidades de responsive design, dark mode automático, y design tokens personalizados
 
 **Breakpoints:**
 - `lg:` (1024px) es el único breakpoint — mobile llena pantalla, desktop muestra mockup
@@ -44,8 +43,9 @@ La app es full-screen y se adapta a cualquier dispositivo de forma automática:
 html → height: 100dvh + overflow: hidden + padding safe-area-insets
 body → min-height: 100dvh + position: relative + overflow: hidden
 #root → height: 100% + overflow: hidden
-PhoneFrame → h-full min-h-dvh
-Page → h-full flex flex-col
+PhoneFrame outer → h-full w-full overflow-hidden
+PhoneFrame inner → absolute inset-0 (mobile), relative + centered (desktop)
+Page → relative h-full flex flex-col
 ```
 
 ---
@@ -55,12 +55,12 @@ Page → h-full flex flex-col
 ```
 src/
 ├── main.tsx                    # Entry point, renderiza App en StrictMode
-├── index.css                   # Tailwind CSS imports + theme (colores, animaciones, glassmorphism)
+├── index.css                   # Tailwind CSS imports + theme (colores, animaciones, MD3 light)
 ├── App.tsx                     # ToastProvider + ErrorBoundary + BrowserRouter + PhoneFrame + lazy routes
 ├── vite-env.d.ts               # Tipos globales (SpeechRecognition, SpeechRecognitionErrorEvent)
-├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse
+├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse, SemanticSearchResult
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
-├── api.ts                      # Fetcher genérico (timeout 120s, extrae error de detail.message) + productApi + movementApi
+├── api.ts                      # Fetcher genérico (timeout 120s, extrae error de detail.message) + productApi + movementApi + searchApi
 │
 ├── lib/
 │   ├── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
@@ -69,37 +69,38 @@ src/
 ├── hooks/
 │   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback
 │   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
-│   ├── useToast.ts             # Contexto + hook useToast() para el sistema de toasts (ToastProvider)
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
-├── components/ui/              # 16 componentes UI con Tailwind CSS
-│   ├── GlassDrawer.tsx         # Floating bottom drawer con glassmorphism + safe area bottom padding
-│   ├── SearchBar.tsx           # Input de búsqueda con botón de voz
-│   ├── ScanBadge.tsx           # Badge del último producto escaneado
-│   ├── BottomNav.tsx           # Navegación inferior de 5 items
-│   ├── CameraOverlay.tsx       # Overlay de escaneo verde con corners animados
-│   ├── StockBadge.tsx          # Badge de stock color-coded
-│   ├── GlassCard.tsx           # Card glassmorphism reutilizable
-│   ├── GlassInput.tsx          # Input con label, icono, error state
-│   ├── VoiceWave.tsx           # Barras animadas de onda de voz
-│   ├── SkeletonLoader.tsx      # Skeleton loader con shimmer
-│   ├── SuccessAnimation.tsx    # Overlay de éxito con check animado
+├── components/ui/              # 18 componentes UI con Tailwind CSS (tema MD3 light)
+│   ├── Button.tsx              # Botón MD3 (filled/outlined/text) con variantes
+│   ├── Card.tsx                # Card reutilizable con glass effect
+│   ├── Input.tsx               # Input MD3 con label, icono, error state
+│   ├── FAB.tsx                 # Floating Action Button (micrófono)
+│   ├── Badge.tsx               # Badge pequeño
+│   ├── Chip.tsx                # Chip/filter
+│   ├── StockBadge.tsx          # Badge de stock color-coded (verde/ambar/rojo)
+│   ├── Header.tsx              # Header de página con back button
+│   ├── PageLayout.tsx          # Layout base para páginas con scroll
+│   ├── NavBar.tsx              # Navegación inferior (4 items) flotante
+│   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile, mockup desktop, ambient blobs)
+│   ├── BottomSheet.tsx         # Bottom sheet desplegable
 │   ├── Toast.tsx               # Sistema de toasts (ToastProvider + useToast)
+│   ├── VoiceWave.tsx           # Barras animadas de onda de voz
+│   ├── Skeleton.tsx            # Skeleton loader con shimmer
 │   ├── EmptyState.tsx          # Estado vacío reutilizable
+│   ├── SuccessAnimation.tsx    # Overlay de éxito con check animado
 │   ├── ErrorBoundary.tsx       # Class error boundary con fallback
-│   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile con min-h-dvh, mockup desktop, ambient blobs solo en desktop)
-│   ├── SplashScreen.tsx        # Intro de marca con motion
 │   └── index.ts               # Barrel exports
 │
 └── pages/                      # 8 pantallas lazy-loaded
-    ├── ScanPage.tsx            # Ruta: / – Cámara + drawer flotante + bottom nav
+    ├── ScanPage.tsx            # Ruta: / – Cámara + viewfinder + bottom nav flotante
     ├── SearchPage.tsx          # Ruta: /search – Búsqueda semántica por voz/texto
     ├── ProductPage.tsx         # Ruta: /product/:barcode – Detalle + movimiento por voz
     ├── NewProductPage.tsx      # Ruta: /new/:barcode – Wizard 5 pasos con STT
     ├── ScanPageRedirect.tsx    # Ruta: /new – Redirect a escaneo aleatorio
-    ├── InventoryPage.tsx       # Ruta: /inventory – Placeholder "Próximamente"
-    ├── AnalyticsPage.tsx       # Ruta: /analytics – Placeholder "Próximamente"
-    └── ProfilePage.tsx         # Ruta: /profile – Placeholder "Próximamente"
+    ├── InventoryPage.tsx       # Ruta: /inventory – Lista de productos
+    ├── ActivityPage.tsx        # Ruta: /activity – Historial de movimientos
+    └── ProfilePage.tsx         # Ruta: /profile – Perfil de usuario
 ```
 
 ---
@@ -107,15 +108,15 @@ src/
 ## Flujo de Navegación
 
 ```
-/                    → ScanPage (cámara + bottom drawer con búsqueda + nav)
+/                    → ScanPage (cámara + viewfinder + bottom nav flotante)
 /search              → SearchPage (búsqueda semántica por voz o texto)
 /product/:barcode    → ProductPage (producto encontrado → registrar movimiento por voz)
                     → si no existe → redirige automáticamente a /new/:barcode
 /new/:barcode        → NewProductPage (wizard de 5 pasos: Nombre → Marca → Categoría → Presentación → Unidad)
 /new                 → ScanPageRedirect (simula escaneo aleatorio)
-/inventory           → InventoryPage (placeholder)
-/analytics           → AnalyticsPage (placeholder)
-/profile             → ProfilePage (placeholder)
+/inventory           → InventoryPage (lista de productos)
+/activity            → ActivityPage (historial de movimientos)
+/profile             → ProfilePage (perfil de usuario)
 ```
 
 ### Nota sobre producto no encontrado
@@ -135,11 +136,11 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 
 ## Diseño Visual / UX
 
-### Tailwind CSS v4
-- **Design tokens personalizados**: colores (brand, success, error, warning, glass), animaciones (@keyframes)
-- **Glassmorphism**: clases de utilidad para backdrop-blur, bg-glass, border-glass
-- **Dark mode**: habilitado por defecto con clase `dark` en `<html>`
-- **Animaciones**: pulse-scan, wave-bar, shimmer, fade-in, slide-up, bounce-in, glow-pulse
+### Tema MD3 Light
+- **Brand color**: `#F97316` (naranja vibrante)
+- **Superficies**: `#FAFAFA` (surface), `#F5F5F5` (surface-1), `#EEEEEE` (surface-2)
+- **Textos**: `#1C1B1F` (on-surface), `#79747E` (on-surface-muted)
+- **Éxito**: `#2E7D32`, **Error**: `#B3261E`, **Warning**: `#ED6C02`
 
 ### CSS base (index.css)
 - `html`: `height: 100dvh` + `overflow: hidden` + padding con `env(safe-area-inset-*)` para soporte de safe areas
@@ -148,28 +149,22 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 - Scrollbar personalizado: 4px de ancho, translúcido
 
 ### Fondo ambiente (profundidad)
-- `PhoneFrame.tsx` define 3 blobs animados (azul, verde, púrpura) con blur y animación CSS
+- `PhoneFrame.tsx` define 3 blobs animados (naranja, verde, púrpura) con blur y animación CSS
 - Los blobs solo son visibles en desktop (`hidden lg:block`) — en mobile el fondo es sólido
 - Todos los componentes usan `background: transparent` para que el ambiente se vea
-- `CameraView` usa fallback translúcido (`bg-black/80`) para que el ambiente asome en desktop
-
-### Splash / intro de marca
-- `SplashScreen.tsx`: logo + glow con `motion`, una sola vez al cargar (~1.3s)
-- Con `prefers-reduced-motion` dura ~250ms y no anima
 
 ### Sistema de Toasts
 - `Toast.tsx` + `useToast.ts`: `ToastProvider` (context) + `useToast()`
 - Toasts glass apilados, icono (check/alert/info), auto-dismiss, animación `motion`, `aria-live="polite"`
 
 ### Skeleton loaders
-- `SkeletonLoader.tsx`: utilidad de shimmer con Tailwind, variantes text/rect/circle
+- `Skeleton.tsx`: utilidad de shimmer con Tailwind
 
 ### Feedback háptico
 - `haptics.ts`: wrapper de `navigator.vibrate(...)` con feature-check y no-op en desktop
-- Usado en `CameraOverlay`, `BottomNav`, y `SuccessAnimation`
 
 ### Error Boundary
-- `ErrorBoundary.tsx` (clase) con fallback glass + botón "Reintentar"
+- `ErrorBoundary.tsx` (clase) con fallback + botón "Reintentar"
 
 ### Accesibilidad
 - `VoiceWave` lleva `aria-hidden="true"`
@@ -181,10 +176,6 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 
 ### Empty states
 - `EmptyState.tsx`: icono lucide + título + subtítulo, reutilizable
-
-### PWA manifest
-- `public/manifest.webmanifest` apunta a `public/favicon.svg` y `public/icons.svg`
-- Viewport meta incluye `viewport-fit=cover` para soporte de safe areas en iPhones
 
 ---
 
@@ -198,6 +189,29 @@ VITE_API_URL环境变量，默认: https://voiceinvenoxi-api.onrender.com
 ```
 
 ### Endpoints
+
+#### GET /api/products
+Lista todos los productos.
+
+**Response exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "barcode": "7790123456789",
+      "name": "Aceite de Oliva",
+      "brand": "La Española",
+      "category": "Abarrotes",
+      "presentation": "Botella 500ml",
+      "unit": "Unidad",
+      "stock": 120,
+      "imageUrl": null
+    }
+  ]
+}
+```
 
 #### GET /api/products/:barcode
 Busca un producto por código de barras.
@@ -283,6 +297,26 @@ Convierte audio a texto usando ElevenLabs.
 ```json
 {
   "text": "veinte unidades"
+}
+```
+
+#### GET /api/movements
+Lista todos los movimientos con nombre del producto.
+
+**Response exitosa (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "productId": "uuid",
+      "quantity": 20,
+      "type": "in",
+      "createdAt": "2026-07-28T12:00:00Z",
+      "productName": "Aceite de Oliva"
+    }
+  ]
 }
 ```
 
@@ -402,6 +436,10 @@ interface ApiResponse<T> {
   success: boolean
   message?: string
 }
+
+interface SemanticSearchResult extends Product {
+  score: number
+}
 ```
 
 ---
@@ -417,8 +455,8 @@ backend/
 ├── schemas.py              # Pydantic schemas (model_validator para convertir UUID→str)
 ├── embeddings.py           # Cohere (primario) + Jina (fallback), batch embeddings (96 texts/request)
 ├── routers/
-│   ├── products.py         # GET /api/products/:barcode, POST /api/products
-│   ├── movements.py        # POST /api/movements
+│   ├── products.py         # GET /api/products, GET /api/products/:barcode, POST /api/products
+│   ├── movements.py        # GET /api/movements, POST /api/movements
 │   ├── search.py           # POST /api/search/semantic (queries parametrizadas), POST /api/search/seed-embeddings (batch)
 │   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
 ├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv, pgvector, cohere
@@ -567,12 +605,12 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
 2. **ElevenLabs + fallback Web Speech**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) intentan ElevenLabs vía backend proxy. Si falla (desarrollo sin backend), caen automáticamente a `speechSynthesis` y `SpeechRecognition` nativos del navegador. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
 3. **STT error handling**: `useSTT` expone un estado `error` con mensajes como "Permiso de micrófono denegado", "No se detectó voz", "Tiempo de espera agotado". Timeout de 10s en Web Speech API.
-4. **Audio de confirmación con delay**: En `ProductPage`, el TTS de confirmación se reproduce con 2s de delay después del overlay de éxito.
+4. **Audio de confirmación con delay**: En `ProductPage`, el TTS de confirmación se reproduce con 2.5s de delay después del overlay de éxito.
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen con `min-h-dvh`) y desktop (mockup centrado). `SuccessAnimation` usa `absolute inset-0` dentro de pads con `relative` para contenerse en el phone frame. `Toast` usa `fixed` con `max-w-[480px]` para alinearse con el mockup en desktop. El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
+8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado con ambient blobs). `ScanPage` usa cámara full-screen con viewfinder flotante. `NavBar` flota con `absolute bottom-0 z-20` sobre el contenido. El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
-12. **Fondo ambiente**: `PhoneFrame.tsx` define 3 blobs animados (azul, verde, púrpura) con blur. Todos los componentes usan `background: transparent` para que el ambiente se vea. El `CameraView` usa fallback translúcido (`bg-black/80`) para que el ambiente asome en desktop (sin cámara).
+12. **Fondo ambiente**: `PhoneFrame.tsx` define 3 blobs animados (naranja, verde, púrpura) con blur. Todos los componentes usan `background: transparent` para que el ambiente se vea. Los blobs solo son visibles en desktop (`hidden lg:block`).
