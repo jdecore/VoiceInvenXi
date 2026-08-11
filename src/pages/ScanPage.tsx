@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { FAB, NavBar, PageLayout } from '@/components/ui'
+import { FAB, NavBar } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -42,8 +42,9 @@ export function ScanPage() {
   }
 
   return (
-    <PageLayout>
-      <div className="relative flex-1 bg-surface-2 overflow-hidden">
+    <div className="relative h-full flex flex-col bg-surface-2 overflow-hidden">
+      {/* Camera feed */}
+      <div className="relative flex-1 overflow-hidden">
         <video
           ref={videoRef}
           autoPlay
@@ -74,7 +75,7 @@ export function ScanPage() {
           </div>
 
           {/* Hint text */}
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+          <div className="absolute bottom-24 left-0 right-0 flex justify-center">
             <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm">
               <p className="text-white text-sm font-medium">
                 {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
@@ -85,7 +86,7 @@ export function ScanPage() {
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-on-surface text-lg font-bold drop-shadow-sm">VoiceInvenXi</h1>
+          <h1 className="text-white text-lg font-bold drop-shadow-md">VoiceInvenXi</h1>
           <button
             onClick={handleSimulateScan}
             className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
@@ -97,11 +98,12 @@ export function ScanPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+      {/* Bottom nav area - floating over camera */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center gap-3 px-4 py-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
         <FAB onClick={handleMic} />
       </div>
-    </PageLayout>
+    </div>
   )
 }
 

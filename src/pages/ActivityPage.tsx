@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ArrowUpCircle, ArrowDownCircle, Activity } from 'lucide-react'
-import { PageLayout, Header, Card, NavBar, EmptyState, Skeleton } from '@/components/ui'
+import { Header, Card, NavBar, EmptyState, Skeleton } from '@/components/ui'
 import { movementApi } from '@/api'
 import type { Movement } from '@/types'
 
@@ -42,10 +42,10 @@ export function ActivityPage() {
   }
 
   return (
-    <PageLayout>
+    <div className="relative h-full flex flex-col bg-surface overflow-hidden">
       <Header title="Actividad" />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -94,9 +94,9 @@ export function ActivityPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
       </div>
-    </PageLayout>
+    </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Search } from 'lucide-react'
 import { motion } from 'motion/react'
-import { PageLayout, Header, Card, FAB, VoiceWave, Skeleton, EmptyState, NavBar, useToast } from '@/components/ui'
+import { Header, Card, FAB, VoiceWave, Skeleton, EmptyState, NavBar, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
 import type { SemanticSearchResult } from '@/types'
@@ -61,10 +61,10 @@ export function SearchPage() {
   }
 
   return (
-    <PageLayout>
+    <div className="relative h-full flex flex-col bg-surface overflow-hidden">
       <Header title="Búsqueda" showBack />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         <div className="flex flex-col items-center gap-3 py-4">
           <FAB isListening={isListening} onClick={handleMic} />
           <p className="text-on-surface-muted text-sm">
@@ -144,9 +144,9 @@ export function SearchPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
       </div>
-    </PageLayout>
+    </div>
   )
 }

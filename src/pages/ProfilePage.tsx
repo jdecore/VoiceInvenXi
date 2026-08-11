@@ -1,12 +1,12 @@
 import { User, Settings, Bell, HelpCircle, LogOut } from 'lucide-react'
-import { PageLayout, Header, Card, NavBar } from '@/components/ui'
+import { Header, Card, NavBar } from '@/components/ui'
 
 export function ProfilePage() {
   return (
-    <PageLayout>
+    <div className="relative h-full flex flex-col bg-surface overflow-hidden">
       <Header title="Perfil" showBack={false} />
 
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         <div className="flex flex-col items-center py-6">
           <div className="flex items-center justify-center w-20 h-20 rounded-full bg-brand-container mb-4">
             <User className="w-10 h-10 text-brand" />
@@ -65,9 +65,9 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-white border-t border-outline-variant/50">
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
       </div>
-    </PageLayout>
+    </div>
   )
 }
