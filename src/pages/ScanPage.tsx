@@ -57,13 +57,38 @@ export function ScanPage() {
           </div>
         )}
 
-        {isActive && <ScanOverlay />}
+        {/* Scan viewfinder overlay */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+            w-[min(70vw,280px)] h-[min(70vw,280px)]
+          ">
+            {/* Corner brackets */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-brand rounded-tl-xl" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-brand rounded-tr-xl" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-brand rounded-bl-xl" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-brand rounded-br-xl" />
 
+            {/* Scanning line */}
+            <ScanLine />
+          </div>
+
+          {/* Hint text */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+            <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm">
+              <p className="text-white text-sm font-medium">
+                {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-on-surface text-lg font-bold">VoiceInvenXi</h1>
+          <h1 className="text-on-surface text-lg font-bold drop-shadow-sm">VoiceInvenXi</h1>
           <button
             onClick={handleSimulateScan}
-            className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm
+            className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
               text-on-surface text-xs font-medium shadow-sm
               hover:bg-white transition-colors"
           >
@@ -80,7 +105,7 @@ export function ScanPage() {
   )
 }
 
-function ScanOverlay() {
+function ScanLine() {
   const [lineTop, setLineTop] = useState(0)
 
   useEffect(() => {
@@ -89,7 +114,7 @@ function ScanOverlay() {
     let direction = 1
 
     const animate = () => {
-      position += direction * 1.5
+      position += direction * 1.2
       if (position >= 100 || position <= 0) direction *= -1
       setLineTop(position)
       frame = requestAnimationFrame(animate)
@@ -100,22 +125,9 @@ function ScanOverlay() {
   }, [])
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute inset-0 bg-black/10" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-        w-[min(70vw,260px)] h-[min(70vw,260px)]
-        border-2 border-brand/60 rounded-2xl
-        shadow-[0_0_60px_rgba(249,115,22,0.15)]
-      ">
-        <div className="absolute top-0 left-0 w-6 h-6 border-t-3 border-l-3 border-brand rounded-tl-lg" />
-        <div className="absolute top-0 right-0 w-6 h-6 border-t-3 border-r-3 border-brand rounded-tr-lg" />
-        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-3 border-l-3 border-brand rounded-bl-lg" />
-        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-3 border-r-3 border-brand rounded-br-lg" />
-        <div
-          className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent"
-          style={{ top: `${lineTop}%` }}
-        />
-      </div>
-    </div>
+    <div
+      className="absolute left-3 right-3 h-[2px] bg-gradient-to-r from-transparent via-brand to-transparent"
+      style={{ top: `${lineTop}%` }}
+    />
   )
 }
