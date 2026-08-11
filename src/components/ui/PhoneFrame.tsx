@@ -17,8 +17,8 @@ export function PhoneFrame({ children }: PhoneFrameProps) {
       {/* Phone frame */}
       <div className="
         relative z-10
-        h-full w-full
-        lg:h-[844px] lg:max-w-[480px] lg:rounded-[44px] lg:border lg:border-white/10
+        h-full w-full min-h-dvh
+        lg:h-[844px] lg:min-h-0 lg:max-w-[480px] lg:rounded-[44px] lg:border lg:border-white/10
         lg:shadow-[0_20px_80px_rgba(0,0,0,0.5)]
         overflow-hidden
         bg-transparent

@@ -27,11 +27,26 @@ VoiceInvenXi es una aplicación de inventario para bodegas. Los operarios escane
 
 ### Responsive Design
 
-La app es full-screen y se adapta a cualquier dispositivo:
+La app es full-screen y se adapta a cualquier dispositivo de forma automática:
 
-- **Mobile** (`< 481px`): sin bordes ni sombras, ocupa 100% de la pantalla
-- **Desktop** (`≥ 481px`): se centra como mockup de teléfono con max-width 480px, border-radius 44px y sombra, altura máxima 844px
+- **Mobile** (`< 1024px`): llena 100% del viewport dinámico (`100dvh`), sin bordes ni sombras, sin max-width
+- **Desktop** (`≥ 1024px`): mockup centrado de teléfono (480x844px) con border-radius 44px, borde sutil y sombra
+- **Safe areas**: soporte automático para iPhones con notch/Dynamic Island via `env(safe-area-inset-*)` en html + `pb-[env(safe-area-inset-bottom)]` en GlassDrawer
+- **Viewport meta**: `viewport-fit=cover` habilitado para llenar toda la pantalla
+- **Dynamic viewport**: usa `100dvh` (dynamic viewport height) en html/body/PhoneFrame para adaptarse al chrome del navegador móvil (barra de URL, home indicator)
 - **Tailwind CSS v4**: utilidades de responsive design, dark mode automático, y design tokens personalizados
+
+**Breakpoints:**
+- `lg:` (1024px) es el único breakpoint — mobile llena pantalla, desktop muestra mockup
+
+**Height chain (mobile):**
+```
+html → height: 100dvh + overflow: hidden + padding safe-area-insets
+body → min-height: 100dvh + position: relative + overflow: hidden
+#root → height: 100% + overflow: hidden
+PhoneFrame → h-full min-h-dvh
+Page → h-full flex flex-col
+```
 
 ---
 
@@ -58,7 +73,7 @@ src/
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
 ├── components/ui/              # 16 componentes UI con Tailwind CSS
-│   ├── GlassDrawer.tsx         # Floating bottom drawer con glassmorphism
+│   ├── GlassDrawer.tsx         # Floating bottom drawer con glassmorphism + safe area bottom padding
 │   ├── SearchBar.tsx           # Input de búsqueda con botón de voz
 │   ├── ScanBadge.tsx           # Badge del último producto escaneado
 │   ├── BottomNav.tsx           # Navegación inferior de 5 items
@@ -72,7 +87,7 @@ src/
 │   ├── Toast.tsx               # Sistema de toasts (ToastProvider + useToast)
 │   ├── EmptyState.tsx          # Estado vacío reutilizable
 │   ├── ErrorBoundary.tsx       # Class error boundary con fallback
-│   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile, mockup desktop)
+│   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile con min-h-dvh, mockup desktop, ambient blobs solo en desktop)
 │   ├── SplashScreen.tsx        # Intro de marca con motion
 │   └── index.ts               # Barrel exports
 │
@@ -126,8 +141,15 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 - **Dark mode**: habilitado por defecto con clase `dark` en `<html>`
 - **Animaciones**: pulse-scan, wave-bar, shimmer, fade-in, slide-up, bounce-in, glow-pulse
 
+### CSS base (index.css)
+- `html`: `height: 100dvh` + `overflow: hidden` + padding con `env(safe-area-inset-*)` para soporte de safe areas
+- `body`: `position: relative; min-height: 100dvh; touch-action: manipulation; overflow: hidden`
+- `#root`: `height: 100%; overflow: hidden`
+- Scrollbar personalizado: 4px de ancho, translúcido
+
 ### Fondo ambiente (profundidad)
 - `PhoneFrame.tsx` define 3 blobs animados (azul, verde, púrpura) con blur y animación CSS
+- Los blobs solo son visibles en desktop (`hidden lg:block`) — en mobile el fondo es sólido
 - Todos los componentes usan `background: transparent` para que el ambiente se vea
 - `CameraView` usa fallback translúcido (`bg-black/80`) para que el ambiente asome en desktop
 
@@ -162,6 +184,7 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 
 ### PWA manifest
 - `public/manifest.webmanifest` apunta a `public/favicon.svg` y `public/icons.svg`
+- Viewport meta incluye `viewport-fit=cover` para soporte de safe areas en iPhones
 
 ---
 
@@ -548,7 +571,7 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado).
+8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen con `min-h-dvh`) y desktop (mockup centrado). `SuccessAnimation` usa `absolute inset-0` dentro de pads con `relative` para contenerse en el phone frame. `Toast` usa `fixed` con `max-w-[480px]` para alinearse con el mockup en desktop. El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
