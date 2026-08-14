@@ -56,8 +56,8 @@ Page → relative h-full flex flex-col
 - Hint pill "Apunta al código de barras" en `bottom-48` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav
 - Botón de linterna (torch) en la top bar junto al título
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
-- Título "VoiceInvenXi" alineado 10% a la derecha (`pl-[10%]`)
-- Acciones de la top bar alineadas 10% a la izquierda (`mr-[10%]`)
+- Título "VoiceInvenXi" flexible (`flex-1 min-w-0 truncate`) alineado con `pl-[min(10%,40px)]` — nunca se sale del frame
+- Acciones de la top bar en `flex shrink-0` con `pr-[min(10%,40px)]` — los botones conservan su tamaño en cualquier ancho de pantalla
 
 ---
 

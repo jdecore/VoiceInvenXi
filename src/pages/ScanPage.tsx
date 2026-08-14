@@ -90,9 +90,11 @@ export function ScanPage() {
         </div>
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-white text-lg font-bold drop-shadow-md pl-[10%]">VoiceInvenXi</h1>
-          <div className="flex items-center gap-2 mr-[10%]">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-2 px-4 pt-4 pb-2">
+          <h1 className="flex-1 min-w-0 truncate text-white text-lg font-bold drop-shadow-md pl-[min(10%,40px)]">
+            VoiceInvenXi
+          </h1>
+          <div className="flex shrink-0 items-center gap-2 pr-[min(10%,40px)]">
             <button
               onClick={toggleTorch}
               disabled={!isActive}
