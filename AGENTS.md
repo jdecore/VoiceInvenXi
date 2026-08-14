@@ -52,14 +52,14 @@ Page → relative h-full flex flex-col
 
 **ScanPage layout:**
 - NavBar fijo en `absolute bottom-0 z-20` (misma posición que el resto de páginas, memoria muscular)
-- FAB de búsqueda por voz en la esquina inferior derecha (`right-5 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20`), **misma banda vertical que la NavBar** (no flota a media altura)
+- FAB de búsqueda por voz **dentro de la misma fila que la NavBar** (`PageLayout navExtra`, `items-center gap-2`) — el micrófono y la navbar comparten exactamente la misma altura y nunca se solapan en pantallas angostas
 - Hint pill "Apunta al código de barras" posicionado con `bottom-[clamp(6.5rem,18dvh,12rem)]` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav — escala fluido con la altura del frame
 - Escaneo automático real con `BarcodeDetector` (loop de 400ms sobre el video, formatos EAN/UPC/Code128/QR). Si el navegador no lo soporta, se muestra un aviso sutil
 - Beep de escaneo con Web Audio (`src/lib/beep.ts`, `playScanBeep`) + `hapticSuccess()` al detectar un código
 - Recuadro de escaneo: esquinas con `corner-pulse` (2.4s), línea de barrido con glow (`scan-line` anima `top` 0 → calc(100%-2px)), `ring` naranja mientras escanea
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
-- Título "VoiceInvenXi" flexible (`flex-1 min-w-0 truncate`) alineado con `pl-[min(10%,40px)]` — nunca se sale del frame
-- Acciones de la top bar en `flex shrink-0` con `pr-[min(10%,40px)]` — los botones conservan su tamaño en cualquier ancho de pantalla
+- Título "VoiceInvenXi" flexible (`flex-1 min-w-0 truncate`) alineado con `pl-[10%]` y **centrado verticalmente** en la top bar (`py-4` simétrico) — nunca se sale del frame
+- Acciones de la top bar en `flex shrink-0` con `pr-[10%]` — los botones conservan su tamaño en cualquier ancho de pantalla
 
 ---
 

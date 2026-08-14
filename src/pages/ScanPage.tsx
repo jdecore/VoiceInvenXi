@@ -103,7 +103,12 @@ export function ScanPage() {
   }
 
   return (
-    <PageLayout nav scroll={false} className="!bg-surface-2">
+    <PageLayout
+      nav
+      navExtra={<FAB onClick={handleMic} />}
+      scroll={false}
+      className="!bg-surface-2"
+    >
       {/* Camera feed */}
       <div className="relative flex-1 overflow-hidden">
         <video
@@ -164,7 +169,7 @@ export function ScanPage() {
         </div>
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-2 px-4 pt-4 pb-2">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-2 px-4 py-4">
           <h1 className="flex-1 min-w-0 truncate text-white text-lg font-bold drop-shadow-md pl-[10%]">
             VoiceInvenXi
           </h1>
@@ -181,11 +186,6 @@ export function ScanPage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Voice search FAB - corner, same band as nav bar */}
-      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-5 z-20">
-        <FAB onClick={handleMic} />
       </div>
     </PageLayout>
   )
