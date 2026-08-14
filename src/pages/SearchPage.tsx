@@ -78,7 +78,7 @@ export function SearchPage() {
     <PageLayout
       nav
       header={<Header title="Búsqueda" showBack />}
-      contentClassName="px-4 pb-24"
+      contentClassName="px-4 pb-[calc(20%+8rem)]"
     >
       <div className="pt-1">
         <Input

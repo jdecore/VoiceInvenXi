@@ -9,7 +9,7 @@ export function ProfilePage() {
   }
 
   return (
-    <PageLayout nav header={<Header title="Perfil" showBack={false} />} contentClassName="px-4 pb-24">
+    <PageLayout nav header={<Header title="Perfil" showBack={false} />} contentClassName="px-4 pb-[calc(20%+8rem)]">
       <div className="flex flex-col items-center py-6">
         <div className="flex items-center justify-center w-20 h-20 rounded-full bg-brand-container mb-4">
           <User className="w-10 h-10 text-brand" />
