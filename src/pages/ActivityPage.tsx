@@ -45,7 +45,7 @@ export function ActivityPage() {
     <PageLayout
       nav
       header={<Header title="Actividad" />}
-      contentClassName="px-4 pb-[calc(20%+8rem)]"
+      contentClassName="px-4 pb-[calc(10%+8rem)]"
     >
       {isLoading ? (
         <div className="space-y-3">

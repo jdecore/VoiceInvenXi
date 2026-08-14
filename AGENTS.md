@@ -51,9 +51,9 @@ Page → relative h-full flex flex-col
 > **Importante:** `body` debe tener `height: 100%` (no solo `min-height`) para que la cadena de `height: 100%` de `#root`/PhoneFrame resuelva de forma definida en móvil. Sin esto, el layout colapsa en dispositivos móviles.
 
 **ScanPage layout:**
-- NavBar fijo en `absolute bottom-[20%] z-20` (elevada un 20% de la altura del frame; misma posición en todas las páginas, memoria muscular)
+- NavBar fijo en `absolute bottom-[10%] z-20` (elevada un 10% de la altura del frame; misma posición en todas las páginas, memoria muscular)
 - FAB de búsqueda por voz **dentro de la misma fila que la NavBar** (`PageLayout navExtra`, `items-center gap-2`) — el micrófono y la navbar comparten exactamente la misma altura y nunca se solapan en pantallas angostas
-- Hint pill "Apunta al código de barras" posicionado con `bottom-[calc(20%+7rem)]` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav — escala fluido con la altura del frame
+- Hint pill "Apunta al código de barras" posicionado con `bottom-[calc(10%+7rem)]` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav — escala fluido con la altura del frame
 - Escaneo automático real con `BarcodeDetector` (loop de 400ms sobre el video, formatos EAN/UPC/Code128/QR). Si el navegador no lo soporta, se muestra un aviso sutil
 - Beep de escaneo con Web Audio (`src/lib/beep.ts`, `playScanBeep`) + `hapticSuccess()` al detectar un código
 - Recuadro de escaneo: esquinas con `corner-pulse` (2.4s), línea de barrido con glow (`scan-line` anima `top` 0 → calc(100%-2px)), `ring` naranja mientras escanea
@@ -173,7 +173,7 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 ### PageLayout (scaffold único)
 - Todas las páginas usan `PageLayout` con la misma estructura: header slot + región scroll + NavBar opcional
 - Props: `header?: ReactNode`, `nav?: boolean` (renderiza NavBar flotante con safe-area), `scroll?: boolean` (default true; `false` para layouts full-bleed como ScanPage), `contentClassName`, `className`
-- El NavBar se posiciona `absolute bottom-[20%]` dentro del layout — no repetir el bloque en cada página
+- El NavBar se posiciona `absolute bottom-[10%]` dentro del layout — no repetir el bloque en cada página
 
 ### Lenguaje de fila estándar
 - `ProductRow.tsx`: tile de icono `w-11 h-11 rounded-2xl bg-brand-container` + nombre + meta + `StockBadge` — usado por Inventory y Search
@@ -631,7 +631,7 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado con ambient blobs). `ScanPage` usa cámara full-screen con viewfinder flotante. `NavBar` está fijo en `absolute bottom-[20%] z-20` en todas las páginas (posición consistente, elevada 20% de la altura del frame). El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
+8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado con ambient blobs). `ScanPage` usa cámara full-screen con viewfinder flotante. `NavBar` está fijo en `absolute bottom-[10%] z-20` en todas las páginas (posición consistente, elevada 10% de la altura del frame). El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.

@@ -151,7 +151,7 @@ export function ScanPage() {
           </div>
 
           {/* Hint text */}
-          <div className="absolute bottom-[calc(20%+7rem)] left-0 right-0 flex justify-center">
+          <div className="absolute bottom-[calc(10%+7rem)] left-0 right-0 flex justify-center">
             <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm text-center">
               <p className="text-white text-sm font-medium whitespace-nowrap">
                 {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
@@ -160,7 +160,7 @@ export function ScanPage() {
           </div>
 
           {!supportsBarcode && (
-            <div className="absolute bottom-[calc(20%+9.5rem)] left-0 right-0 flex justify-center">
+            <div className="absolute bottom-[calc(10%+9.5rem)] left-0 right-0 flex justify-center">
               <p className="text-white/70 text-xs px-4 text-center">
                 Escaneo automático no disponible en este navegador
               </p>
