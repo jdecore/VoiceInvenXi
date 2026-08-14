@@ -29,7 +29,7 @@ export function PageLayout({
         {children}
       </div>
       {nav && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
+        <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <NavBar />
         </div>
       )}

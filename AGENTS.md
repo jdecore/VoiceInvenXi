@@ -57,7 +57,6 @@ Page → relative h-full flex flex-col
 - Escaneo automático real con `BarcodeDetector` (loop de 400ms sobre el video, formatos EAN/UPC/Code128/QR). Si el navegador no lo soporta, se muestra un aviso sutil
 - Beep de escaneo con Web Audio (`src/lib/beep.ts`, `playScanBeep`) + `hapticSuccess()` al detectar un código
 - Recuadro de escaneo: esquinas con `corner-pulse` (2.4s), línea de barrido con glow (`scan-line` anima `top` 0 → calc(100%-2px)), `ring` naranja mientras escanea
-- Botón de linterna (torch) en la top bar junto al título
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
 - Título "VoiceInvenXi" flexible (`flex-1 min-w-0 truncate`) alineado con `pl-[min(10%,40px)]` — nunca se sale del frame
 - Acciones de la top bar en `flex shrink-0` con `pr-[min(10%,40px)]` — los botones conservan su tamaño en cualquier ancho de pantalla

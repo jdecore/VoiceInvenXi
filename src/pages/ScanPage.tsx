@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { Flashlight, ScanLine } from 'lucide-react'
+import { ScanLine } from 'lucide-react'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
@@ -26,7 +26,7 @@ function createDetector(): BarcodeDetector | null {
 
 export function ScanPage() {
   const navigate = useNavigate()
-  const { videoRef, isActive, start, stop, torchOn, toggleTorch } = useCamera()
+  const { videoRef, isActive, start, stop } = useCamera()
   const { speak } = useTTS()
   const [isScanning, setIsScanning] = useState(false)
   const [supportsBarcode, setSupportsBarcode] = useState(true)
@@ -165,22 +165,10 @@ export function ScanPage() {
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-2 px-4 pt-4 pb-2">
-          <h1 className="flex-1 min-w-0 truncate text-white text-lg font-bold drop-shadow-md pl-[min(10%,40px)]">
+          <h1 className="flex-1 min-w-0 truncate text-white text-lg font-bold drop-shadow-md pl-[10%]">
             VoiceInvenXi
           </h1>
-          <div className="flex shrink-0 items-center gap-2 pr-[min(10%,40px)]">
-            <button
-              onClick={toggleTorch}
-              disabled={!isActive}
-              aria-label={torchOn ? 'Apagar linterna' : 'Encender linterna'}
-              className={`flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm transition-all duration-150 active:scale-95 ${
-                torchOn
-                  ? 'bg-brand text-white'
-                  : 'bg-white/90 text-on-surface hover:bg-white'
-              } disabled:opacity-50`}
-            >
-              <Flashlight className={`w-4 h-4 ${torchOn ? '' : 'text-on-surface'}`} />
-            </button>
+          <div className="flex shrink-0 items-center gap-2 pr-[10%]">
             {import.meta.env.DEV && (
               <button
                 onClick={handleSimulateScan}
