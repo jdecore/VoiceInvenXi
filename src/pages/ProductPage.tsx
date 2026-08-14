@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
-import { PageLayout, Header, Card, StockBadge, FAB, VoiceWave, SuccessAnimation, Skeleton, useToast } from '@/components/ui'
+import { Plus, Minus, Volume2 } from 'lucide-react'
+import { PageLayout, Header, Card, FAB, VoiceWave, SuccessAnimation, Skeleton, useToast } from '@/components/ui'
+import { StockValue, getStockColor } from '@/components/ui/StockValue'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi, movementApi } from '@/api'
+import { parseSpanishNumber } from '@/lib/numbers'
 import type { Product } from '@/types'
 
 export function ProductPage() {
@@ -45,33 +47,31 @@ export function ProductPage() {
   const handleMovement = useCallback(async (text: string) => {
     if (!product) return
 
-    const numbers = text.match(/\d+/)
-    if (!numbers) {
-      showToast('error', 'No se detectó una cantidad')
-      return
-    }
+    const digitsMatch = text.match(/\d+/)
+    const parsed = digitsMatch
+      ? parseInt(digitsMatch[0], 10)
+      : parseSpanishNumber(text)
 
-    const quantity = parseInt(numbers[0], 10)
-    if (quantity <= 0) {
-      showToast('error', 'La cantidad debe ser mayor a 0')
+    if (!parsed || parsed <= 0) {
+      showToast('error', 'No se detectó una cantidad')
       return
     }
 
     try {
       await movementApi.create({
         productId: product.id,
-        quantity,
+        quantity: parsed,
         type: movementType,
       })
 
       setProduct((prev) => prev ? {
         ...prev,
-        stock: movementType === 'in' ? prev.stock + quantity : prev.stock - quantity,
+        stock: movementType === 'in' ? prev.stock + parsed : prev.stock - parsed,
       } : null)
 
       setShowSuccess(true)
       setTimeout(() => {
-        speak(`${movementType === 'in' ? 'Entrada' : 'Salida'} de ${quantity} unidades registrada`)
+        speak(`${movementType === 'in' ? 'Entrada' : 'Salida'} de ${parsed} unidades registrada`)
       }, 2500)
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : 'Error al registrar movimiento')
@@ -84,6 +84,10 @@ export function ProductPage() {
     } else {
       start()
     }
+  }
+
+  const handleReplayStock = () => {
+    speak(`${product?.name}, ${product?.stock} ${product?.unit || 'unidades'} en stock`)
   }
 
   if (isLoading) {
@@ -120,14 +124,32 @@ export function ProductPage() {
           </div>
 
           <Card>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-on-surface text-lg font-semibold">{product.name}</p>
                 {product.brand && (
                   <p className="text-on-surface-muted text-sm">{product.brand}</p>
                 )}
               </div>
-              <StockBadge stock={product.stock} unit={product.unit} size="lg" />
+              <div className="flex flex-col items-end">
+                <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wide">
+                  Stock
+                </p>
+                <div className="flex items-center gap-2">
+                  <StockValue
+                    stock={product.stock}
+                    unit={product.unit}
+                    className={`text-4xl font-bold leading-none ${getStockColor(product.stock)}`}
+                  />
+                  <button
+                    onClick={handleReplayStock}
+                    aria-label="Escuchar stock"
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-3 transition-colors"
+                  >
+                    <Volume2 className="w-4 h-4 text-brand" />
+                  </button>
+                </div>
+              </div>
             </div>
           </Card>
 
@@ -155,7 +177,7 @@ export function ProductPage() {
                     : 'bg-surface-2 text-on-surface-muted border border-outline-variant/50'
                 }`}
               >
-                <ArrowDownCircle className="w-5 h-5" />
+                <Plus className="w-5 h-5" />
                 Entrada
               </button>
               <button
@@ -166,7 +188,7 @@ export function ProductPage() {
                     : 'bg-surface-2 text-on-surface-muted border border-outline-variant/50'
                 }`}
               >
-                <ArrowUpCircle className="w-5 h-5" />
+                <Minus className="w-5 h-5" />
                 Salida
               </button>
             </div>

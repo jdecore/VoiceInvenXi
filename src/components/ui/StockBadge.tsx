@@ -1,4 +1,5 @@
 import { Package } from 'lucide-react'
+import { StockValue } from './StockValue'
 
 interface StockBadgeProps {
   stock: number
@@ -27,7 +28,7 @@ export function StockBadge({ stock, unit = 'Unidad', size = 'md' }: StockBadgePr
       ${getColor()} ${getSize()}
     `}>
       <Package className={size === 'sm' ? 'w-3 h-3' : size === 'md' ? 'w-4 h-4' : 'w-5 h-5'} />
-      {stock} {unit}
+      <StockValue stock={stock} unit={unit} unitClassName="text-[inherit]" />
     </span>
   )
 }

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Search } from 'lucide-react'
-import { motion } from 'motion/react'
-import { Header, Card, FAB, VoiceWave, Skeleton, EmptyState, NavBar, useToast } from '@/components/ui'
+import { Header, Card, Input, FAB, VoiceWave, Skeleton, EmptyState, NavBar, StockBadge, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
 import type { SemanticSearchResult } from '@/types'
@@ -17,6 +16,7 @@ export function SearchPage() {
   const [results, setResults] = useState<SemanticSearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const debounceRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (searchParams.get('voice') === 'true' && isSupported) {
@@ -48,6 +48,20 @@ export function SearchPage() {
     }
   }
 
+  const handleTextChange = (value: string) => {
+    setQuery(value)
+    if (debounceRef.current) window.clearTimeout(debounceRef.current)
+
+    debounceRef.current = window.setTimeout(() => {
+      if (value.trim()) {
+        performSearch(value)
+      } else {
+        setResults([])
+        setHasSearched(false)
+      }
+    }, 400)
+  }
+
   const handleMic = () => {
     if (isListening) {
       stop()
@@ -65,6 +79,16 @@ export function SearchPage() {
       <Header title="Búsqueda" showBack />
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">
+        <div className="pt-1">
+          <Input
+            label="Buscar producto"
+            placeholder="Escribe o usa el micrófono..."
+            icon={<Search className="w-4 h-4" />}
+            value={query}
+            onChange={(e) => handleTextChange(e.target.value)}
+          />
+        </div>
+
         <div className="flex flex-col items-center gap-3 py-4">
           <FAB isListening={isListening} onClick={handleMic} />
           <p className="text-on-surface-muted text-sm">
@@ -77,15 +101,6 @@ export function SearchPage() {
         {isListening && (
           <div className="flex justify-center pb-4">
             <VoiceWave active />
-          </div>
-        )}
-
-        {query && !isListening && (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-2">
-              <Search className="w-4 h-4 text-on-surface-muted" />
-              <span className="text-on-surface text-sm">{query}</span>
-            </div>
           </div>
         )}
 
@@ -109,28 +124,17 @@ export function SearchPage() {
         ) : (
           <div className="space-y-3">
             {results.map((result) => (
-              <motion.div
-                key={result.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Card interactive onClick={() => handleResultClick(result)}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-on-surface font-medium truncate">{result.name}</p>
-                      <p className="text-on-surface-muted text-sm truncate">
-                        {result.brand} {result.category && `• ${result.category}`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-brand text-sm font-semibold">
-                        {Math.round(result.score * 100)}%
-                      </p>
-                      <p className="text-on-surface-muted text-xs">Stock: {result.stock}</p>
-                    </div>
+              <Card key={result.id} interactive onClick={() => handleResultClick(result)}>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-on-surface font-medium truncate">{result.name}</p>
+                    <p className="text-on-surface-muted text-sm truncate">
+                      {result.brand} {result.category && `• ${result.category}`}
+                    </p>
                   </div>
-                </Card>
-              </motion.div>
+                  <StockBadge stock={result.stock} unit={result.unit} size="sm" />
+                </div>
+              </Card>
             ))}
           </div>
         )}

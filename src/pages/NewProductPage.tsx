@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { Check } from 'lucide-react'
-import { PageLayout, Header, Card, Input, Button, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
+import { motion, AnimatePresence } from 'motion/react'
+import { PageLayout, Header, Card, Input, Button, FAB, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -41,10 +42,18 @@ export function NewProductPage() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [hasTyped, setHasTyped] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     speak('Producto nuevo. Di el nombre del producto.')
   }, [])
+
+  useEffect(() => {
+    if (hasTyped) {
+      inputRef.current?.focus()
+    }
+  }, [currentStep, hasTyped])
 
   useEffect(() => {
     if (!transcript) return
@@ -150,58 +159,59 @@ export function NewProductPage() {
         </div>
 
         <div className="px-4 pb-3">
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-on-surface-variant text-sm font-medium">
-                Paso {currentStep + 1} de {STEPS.length}
-              </p>
-              {step.required && (
-                <span className="text-error text-xs font-medium">Requerido</span>
-              )}
-            </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <Card>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-on-surface-variant text-sm font-medium">
+                    Paso {currentStep + 1} de {STEPS.length}
+                  </p>
+                  {step.required && (
+                    <span className="text-error text-xs font-medium">Requerido</span>
+                  )}
+                </div>
 
-            <Input
-              label={step.label}
-              value={values[step.field]}
-              onChange={(e) => setValues((prev) => ({ ...prev, [step.field]: e.target.value }))}
-              placeholder={`Ingresa ${step.label.toLowerCase()}...`}
-            />
+                <Input
+                  ref={inputRef}
+                  label={step.label}
+                  value={values[step.field]}
+                  onChange={(e) => {
+                    setHasTyped(true)
+                    setValues((prev) => ({ ...prev, [step.field]: e.target.value }))
+                  }}
+                  placeholder={`Ingresa ${step.label.toLowerCase()}...`}
+                  enterKeyHint="done"
+                />
 
-            <div className="flex flex-col items-center gap-3 pt-4">
-              {isListening && <VoiceWave active />}
+                <div className="flex flex-col items-center gap-3 pt-4">
+                  {isListening && <VoiceWave active />}
 
-              <button
-                onClick={isListening ? stop : handleVoice}
-                disabled={!isSupported}
-                className={`
-                  w-16 h-16 rounded-full
-                  flex items-center justify-center
-                  transition-all duration-300
-                  ${isListening
-                    ? 'bg-error text-white shadow-lg shadow-error/30 animate-pulse-mic'
-                    : 'bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30'
-                  }
-                  disabled:opacity-50
-                `}
-              >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M12 2C10.34 2 9 3.34 9 5V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V5C15 3.34 13.66 2 12 2Z" />
-                  <path d="M19 10V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V10" />
-                  <path d="M12 19V22" />
-                </svg>
-              </button>
+                  <FAB
+                    isListening={isListening}
+                    onClick={isListening ? stop : handleVoice}
+                    disabled={!isSupported}
+                    aria-label={`Hablar para ingresar ${step.label.toLowerCase()}`}
+                  />
 
-              <p className="text-on-surface-muted text-sm text-center">
-                {isListening
-                  ? interimTranscript || `Di ${step.label.toLowerCase()}...`
-                  : 'Toca para hablar'}
-              </p>
-            </div>
+                  <p className="text-on-surface-muted text-sm text-center">
+                    {isListening
+                      ? interimTranscript || `Di ${step.label.toLowerCase()}...`
+                      : 'Toca para hablar'}
+                  </p>
+                </div>
 
-            {error && (
-              <p className="text-error text-sm text-center mt-2">{error}</p>
-            )}
-          </Card>
+                {error && (
+                  <p className="text-error text-sm text-center mt-2">{error}</p>
+                )}
+              </Card>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className="flex gap-3 px-4 py-4 pb-8">
@@ -211,7 +221,7 @@ export function NewProductPage() {
             </Button>
           )}
           <Button
-            variant={currentStep === STEPS.length - 1 ? 'filled' : 'filled'}
+            variant="filled"
             className="flex-1"
             onClick={handleNext}
             disabled={isSaving}

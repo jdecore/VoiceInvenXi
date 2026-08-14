@@ -6,9 +6,10 @@ interface FABProps {
   isListening?: boolean
   onClick?: () => void
   disabled?: boolean
+  'aria-label'?: string
 }
 
-export function FAB({ isListening = false, onClick, disabled = false }: FABProps) {
+export function FAB({ isListening = false, onClick, disabled = false, 'aria-label': ariaLabel = 'Buscar por voz' }: FABProps) {
   const handleClick = () => {
     hapticTap()
     onClick?.()
@@ -31,7 +32,7 @@ export function FAB({ isListening = false, onClick, disabled = false }: FABProps
         }
         disabled:opacity-50 disabled:cursor-not-allowed
       `}
-      aria-label="Buscar por voz"
+      aria-label={ariaLabel}
     >
       <Mic className="w-6 h-6" />
       {isListening && (

@@ -48,6 +48,14 @@ PhoneFrame inner → absolute inset-0 (mobile), relative + centered (desktop)
 Page → relative h-full flex flex-col
 ```
 
+**ScanPage layout:**
+- NavBar fijo en `absolute bottom-0 z-20` (misma posición que el resto de páginas, memoria muscular)
+- FAB de búsqueda por voz en la esquina inferior derecha (`bottom-32 right-5`), encima de la NavBar
+- Botón de linterna (torch) en la top bar junto al título
+- Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
+- Título "VoiceInvenXi" alineado 10% a la derecha (`pl-[10%]`)
+- Acciones de la top bar alineadas 10% a la izquierda (`mr-[10%]`)
+
 ---
 
 ## Estructura del Proyecto
@@ -609,7 +617,7 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
 6. **No hay manejo offline**: La app asume conexión. Agregar service worker si se necesita offline.
 7. **Imágenes de producto**: El campo `imageUrl` existe pero no hay upload de imágenes aún. Agregar endpoint POST /api/products/:id/image.
-8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado con ambient blobs). `ScanPage` usa cámara full-screen con viewfinder flotante. `NavBar` flota con `absolute bottom-0 z-20` sobre el contenido. El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
+8. **Mobile responsive**: Los componentes usan Tailwind CSS v4 con responsive design. `PhoneFrame` se adapta entre mobile (full-screen) y desktop (mockup centrado con ambient blobs). `ScanPage` usa cámara full-screen con viewfinder flotante. `NavBar` está fijo en `absolute bottom-0 z-20` en todas las páginas (posición consistente). El viewport usa `100dvh` para adaptarse al chrome del navegador móvil.
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.

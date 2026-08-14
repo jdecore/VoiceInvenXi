@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
+import { Flashlight } from 'lucide-react'
 import { FAB, NavBar } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
@@ -8,7 +9,7 @@ import { MOCK_PRODUCTS } from '@/constants'
 
 export function ScanPage() {
   const navigate = useNavigate()
-  const { videoRef, isActive, start, stop } = useCamera()
+  const { videoRef, isActive, start, stop, torchOn, toggleTorch } = useCamera()
   const { speak } = useTTS()
   const [isScanning, setIsScanning] = useState(false)
 
@@ -71,11 +72,11 @@ export function ScanPage() {
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-brand rounded-br-xl" />
 
             {/* Scanning line */}
-            <ScanLine />
+            <div className="absolute left-3 right-3 h-[2px] bg-gradient-to-r from-transparent via-brand to-transparent animate-[scan-line_2.4s_ease-in-out_infinite]" />
           </div>
 
           {/* Hint text */}
-          <div className="absolute bottom-24 left-0 right-0 flex justify-center">
+          <div className="absolute bottom-40 left-0 right-0 flex justify-center">
             <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm">
               <p className="text-white text-sm font-medium">
                 {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
@@ -87,49 +88,42 @@ export function ScanPage() {
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 pt-4 pb-2">
           <h1 className="text-white text-lg font-bold drop-shadow-md pl-[10%]">VoiceInvenXi</h1>
-          <button
-            onClick={handleSimulateScan}
-            className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
-              text-on-surface text-xs font-medium shadow-sm
-              hover:bg-white transition-colors mr-[10%]"
-          >
-            Activo
-          </button>
+          <div className="flex items-center gap-2 mr-[10%]">
+            <button
+              onClick={toggleTorch}
+              disabled={!isActive}
+              aria-label={torchOn ? 'Apagar linterna' : 'Encender linterna'}
+              className={`flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm transition-colors ${
+                torchOn
+                  ? 'bg-brand text-white'
+                  : 'bg-white/90 text-on-surface hover:bg-white'
+              } disabled:opacity-50`}
+            >
+              <Flashlight className={`w-4 h-4 ${torchOn ? '' : 'text-on-surface'}`} />
+            </button>
+            {import.meta.env.DEV && (
+              <button
+                onClick={handleSimulateScan}
+                className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
+                  text-on-surface text-xs font-medium shadow-sm
+                  hover:bg-white transition-colors"
+              >
+                Activo
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Bottom nav area - floating over camera, moved up 15% */}
-      <div className="absolute bottom-[15%] left-0 right-0 z-20 flex items-center justify-center gap-3 px-4 pb-[env(safe-area-inset-bottom)]">
+      {/* Bottom nav - fixed position, consistent with other pages */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
         <NavBar />
+      </div>
+
+      {/* Voice search FAB - corner, above nav */}
+      <div className="absolute bottom-32 right-5 z-20">
         <FAB onClick={handleMic} />
       </div>
     </div>
-  )
-}
-
-function ScanLine() {
-  const [lineTop, setLineTop] = useState(0)
-
-  useEffect(() => {
-    let frame: number
-    let position = 0
-    let direction = 1
-
-    const animate = () => {
-      position += direction * 1.2
-      if (position >= 100 || position <= 0) direction *= -1
-      setLineTop(position)
-      frame = requestAnimationFrame(animate)
-    }
-
-    frame = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(frame)
-  }, [])
-
-  return (
-    <div
-      className="absolute left-3 right-3 h-[2px] bg-gradient-to-r from-transparent via-brand to-transparent"
-      style={{ top: `${lineTop}%` }}
-    />
   )
 }

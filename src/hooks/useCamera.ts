@@ -3,15 +3,18 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 interface UseCamera {
   videoRef: React.RefObject<HTMLVideoElement | null>
   isActive: boolean
+  torchOn: boolean
   capture: () => Promise<Blob | null>
   start: () => Promise<void>
   stop: () => void
+  toggleTorch: () => Promise<void>
 }
 
 export function useCamera(): UseCamera {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [isActive, setIsActive] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
 
   const start = useCallback(async () => {
     try {
@@ -32,6 +35,7 @@ export function useCamera(): UseCamera {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     setIsActive(false)
+    setTorchOn(false)
   }, [])
 
   const capture = useCallback(async (): Promise<Blob | null> => {
@@ -52,11 +56,26 @@ export function useCamera(): UseCamera {
     })
   }, [])
 
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0]
+    if (!track) return
+
+    const next = !torchOn
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as MediaTrackConstraintSet],
+      })
+      setTorchOn(next)
+    } catch {
+      // Linterna no soportada en este dispositivo — no-op
+    }
+  }, [torchOn])
+
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop())
     }
   }, [])
 
-  return { videoRef, isActive, capture, start, stop }
+  return { videoRef, isActive, torchOn, capture, start, stop, toggleTorch }
 }

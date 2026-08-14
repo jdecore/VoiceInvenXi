@@ -1,7 +1,13 @@
-import { User, Settings, Bell, HelpCircle, LogOut } from 'lucide-react'
-import { Header, Card, NavBar } from '@/components/ui'
+import { User, LogOut } from 'lucide-react'
+import { Header, Card, NavBar, useToast } from '@/components/ui'
 
 export function ProfilePage() {
+  const { showToast } = useToast()
+
+  const handleLogout = () => {
+    showToast('info', 'Inicio de sesión no disponible por ahora')
+  }
+
   return (
     <div className="relative h-full flex flex-col bg-surface overflow-hidden">
       <Header title="Perfil" showBack={false} />
@@ -15,54 +21,16 @@ export function ProfilePage() {
           <p className="text-on-surface-muted text-sm"> Administrador</p>
         </div>
 
-        <div className="space-y-2">
-          <Card interactive onClick={() => {}}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
-                <Settings className="w-5 h-5 text-on-surface-variant" />
-              </div>
-              <div className="flex-1">
-                <p className="text-on-surface font-medium">Configuración</p>
-                <p className="text-on-surface-muted text-sm">Preferencias de la app</p>
-              </div>
+        <Card interactive onClick={handleLogout}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-error-container">
+              <LogOut className="w-5 h-5 text-error" />
             </div>
-          </Card>
-
-          <Card interactive onClick={() => {}}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
-                <Bell className="w-5 h-5 text-on-surface-variant" />
-              </div>
-              <div className="flex-1">
-                <p className="text-on-surface font-medium">Notificaciones</p>
-                <p className="text-on-surface-muted text-sm">Gestionar alertas</p>
-              </div>
+            <div className="flex-1">
+              <p className="text-error font-medium">Cerrar sesión</p>
             </div>
-          </Card>
-
-          <Card interactive onClick={() => {}}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-surface-2">
-                <HelpCircle className="w-5 h-5 text-on-surface-variant" />
-              </div>
-              <div className="flex-1">
-                <p className="text-on-surface font-medium">Ayuda</p>
-                <p className="text-on-surface-muted text-sm">Soporte y documentación</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card interactive onClick={() => {}}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-error-container">
-                <LogOut className="w-5 h-5 text-error" />
-              </div>
-              <div className="flex-1">
-                <p className="text-error font-medium">Cerrar sesión</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
