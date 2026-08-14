@@ -1,14 +1,38 @@
 import { type ReactNode } from 'react'
+import { NavBar } from './NavBar'
 
 interface PageLayoutProps {
   children: ReactNode
+  header?: ReactNode
+  nav?: boolean
+  scroll?: boolean
+  contentClassName?: string
   className?: string
 }
 
-export function PageLayout({ children, className = '' }: PageLayoutProps) {
+export function PageLayout({
+  children,
+  header,
+  nav = false,
+  scroll = true,
+  contentClassName = '',
+  className = '',
+}: PageLayoutProps) {
+  const contentClasses = scroll
+    ? 'relative flex-1 overflow-y-auto'
+    : 'relative flex-1 overflow-hidden flex flex-col'
+
   return (
-    <div className={`h-full flex flex-col bg-surface overflow-hidden ${className}`}>
-      {children}
+    <div className={`relative h-full flex flex-col bg-surface overflow-hidden ${className}`}>
+      {header}
+      <div className={`${contentClasses} ${contentClassName}`}>
+        {children}
+      </div>
+      {nav && (
+        <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
+          <NavBar />
+        </div>
+      )}
     </div>
   )
 }

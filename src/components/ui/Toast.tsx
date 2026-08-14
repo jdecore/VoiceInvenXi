@@ -11,11 +11,13 @@ interface Toast {
 }
 
 interface ToastContextValue {
+  toasts: Toast[]
   showToast: (variant: ToastVariant, message: string) => void
   dismissToast: (id: number) => void
 }
 
 const ToastContext = createContext<ToastContextValue>({
+  toasts: [],
   showToast: () => {},
   dismissToast: () => {},
 })
@@ -41,47 +43,54 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  const icons = {
-    success: <CheckCircle className="w-5 h-5 text-success" />,
-    error: <AlertCircle className="w-5 h-5 text-error" />,
-    info: <Info className="w-5 h-5 text-brand" />,
-  }
+  return (
+    <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>
+      {children}
+    </ToastContext.Provider>
+  )
+}
 
-  const borderColors = {
-    success: 'border-success/30',
-    error: 'border-error/30',
-    info: 'border-brand/30',
-  }
+const icons = {
+  success: <CheckCircle className="w-5 h-5 text-success" />,
+  error: <AlertCircle className="w-5 h-5 text-error" />,
+  info: <Info className="w-5 h-5 text-brand" />,
+}
+
+const borderColors = {
+  success: 'border-success/30',
+  error: 'border-error/30',
+  info: 'border-brand/30',
+}
+
+export function ToastHost() {
+  const { toasts, dismissToast } = useToast()
 
   return (
-    <ToastContext.Provider value={{ showToast, dismissToast }}>
-      {children}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-[480px] px-4">
-        <AnimatePresence>
-          {toasts.map((toast) => (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className={`
-                flex items-center gap-3 px-4 py-3
-                bg-white rounded-2xl shadow-lg
-                border ${borderColors[toast.variant]}
-              `}
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-[480px] px-4 flex flex-col gap-2 pointer-events-none">
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className={`
+              flex items-center gap-3 px-4 py-3
+              bg-white rounded-2xl shadow-lg
+              border ${borderColors[toast.variant]} pointer-events-auto
+            `}
+          >
+            {icons[toast.variant]}
+            <p className="flex-1 text-sm text-on-surface">{toast.message}</p>
+            <button
+              onClick={() => dismissToast(toast.id)}
+              className="text-on-surface-muted hover:text-on-surface transition-colors"
             >
-              {icons[toast.variant]}
-              <p className="flex-1 text-sm text-on-surface">{toast.message}</p>
-              <button
-                onClick={() => dismissToast(toast.id)}
-                className="text-on-surface-muted hover:text-on-surface transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </ToastContext.Provider>
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   )
 }

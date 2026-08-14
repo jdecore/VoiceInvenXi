@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Plus, Minus, Volume2 } from 'lucide-react'
+import { Plus, Minus, Volume2, Package } from 'lucide-react'
 import { PageLayout, Header, Card, FAB, VoiceWave, SuccessAnimation, Skeleton, useToast } from '@/components/ui'
 import { StockValue, getStockColor } from '@/components/ui/StockValue'
 import { useSTT } from '@/hooks/useSTT'
@@ -92,8 +92,7 @@ export function ProductPage() {
 
   if (isLoading) {
     return (
-      <PageLayout>
-        <Header title="Cargando..." />
+      <PageLayout header={<Header title="Cargando..." />}>
         <div className="flex-1 px-4 space-y-4">
           <Skeleton className="h-40" />
           <Skeleton className="h-24" />
@@ -107,21 +106,21 @@ export function ProductPage() {
 
   return (
     <PageLayout>
-      <div className="relative flex-1 overflow-y-auto">
-        {showSuccess && (
-          <SuccessAnimation
-            message="Movimiento registrado"
-            subMessage={movementType === 'in' ? 'Stock actualizado' : 'Stock reducido'}
-            onComplete={() => setShowSuccess(false)}
-          />
-        )}
+      {showSuccess && (
+        <SuccessAnimation
+          message="Movimiento registrado"
+          subMessage={movementType === 'in' ? 'Stock actualizado' : 'Stock reducido'}
+          onComplete={() => setShowSuccess(false)}
+        />
+      )}
 
-        <Header title={product.name} subtitle={product.barcode} />
+      <Header title={product.name} subtitle={product.barcode} />
 
-        <div className="px-4 space-y-4 pb-32">
-          <div className="h-40 rounded-2xl bg-surface-2 flex items-center justify-center border border-outline-variant/50">
-            <p className="text-on-surface-muted text-sm">Sin imagen</p>
-          </div>
+      <div className="px-4 space-y-4 pb-32">
+        <div className="h-40 rounded-2xl bg-surface-2 flex flex-col items-center justify-center gap-2 border border-outline-variant/50">
+          <Package className="w-8 h-8 text-on-surface-muted" />
+          <p className="text-on-surface-muted text-sm">Sin imagen</p>
+        </div>
 
           <Card>
             <div className="flex items-center justify-between gap-3">
@@ -212,7 +211,6 @@ export function ProductPage() {
             </div>
           )}
         </div>
-      </div>
     </PageLayout>
   )
 }

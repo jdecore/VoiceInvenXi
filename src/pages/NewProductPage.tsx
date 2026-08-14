@@ -130,112 +130,109 @@ export function NewProductPage() {
 
   return (
     <PageLayout>
-      <div className="relative flex-1 overflow-y-auto">
-        {showSuccess && (
-          <SuccessAnimation
-            message="Producto creado"
-            subMessage={values.name}
-            onComplete={() => setShowSuccess(false)}
+      {showSuccess && (
+        <SuccessAnimation
+          message="Producto creado"
+          subMessage={values.name}
+          onComplete={() => setShowSuccess(false)}
+        />
+      )}
+      <Header title="Nuevo Producto" subtitle={barcode} />
+
+      <div className="flex items-center justify-center gap-2 px-4 py-3">
+        {STEPS.map((s, i) => (
+          <div
+            key={s.key}
+            className={`
+              h-1.5 rounded-full transition-all duration-300
+              ${i === currentStep
+                ? 'w-8 bg-brand'
+                : i < currentStep
+                  ? 'w-3 bg-success'
+                  : 'w-3 bg-surface-3'
+              }
+            `}
           />
-        )}
+        ))}
+      </div>
 
-        <Header title="Nuevo Producto" subtitle={barcode} />
+      <div className="px-4 pb-3">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-on-surface-variant text-sm font-medium">
+                  Paso {currentStep + 1} de {STEPS.length}
+                </p>
+                {step.required && (
+                  <span className="text-error text-xs font-medium">Requerido</span>
+                )}
+              </div>
 
-        <div className="flex items-center justify-center gap-2 px-4 py-3">
-          {STEPS.map((s, i) => (
-            <div
-              key={s.key}
-              className={`
-                h-1.5 rounded-full transition-all duration-300
-                ${i === currentStep
-                  ? 'w-8 bg-brand'
-                  : i < currentStep
-                    ? 'w-3 bg-success'
-                    : 'w-3 bg-surface-3'
-                }
-              `}
-            />
-          ))}
-        </div>
+              <Input
+                ref={inputRef}
+                label={step.label}
+                value={values[step.field]}
+                onChange={(e) => {
+                  setHasTyped(true)
+                  setValues((prev) => ({ ...prev, [step.field]: e.target.value }))
+                }}
+                placeholder={`Ingresa ${step.label.toLowerCase()}...`}
+                enterKeyHint="done"
+              />
 
-        <div className="px-4 pb-3">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-            >
-              <Card>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-on-surface-variant text-sm font-medium">
-                    Paso {currentStep + 1} de {STEPS.length}
-                  </p>
-                  {step.required && (
-                    <span className="text-error text-xs font-medium">Requerido</span>
-                  )}
-                </div>
+              <div className="flex flex-col items-center gap-3 pt-4">
+                {isListening && <VoiceWave active />}
 
-                <Input
-                  ref={inputRef}
-                  label={step.label}
-                  value={values[step.field]}
-                  onChange={(e) => {
-                    setHasTyped(true)
-                    setValues((prev) => ({ ...prev, [step.field]: e.target.value }))
-                  }}
-                  placeholder={`Ingresa ${step.label.toLowerCase()}...`}
-                  enterKeyHint="done"
+                <FAB
+                  isListening={isListening}
+                  onClick={isListening ? stop : handleVoice}
+                  disabled={!isSupported}
+                  aria-label={`Hablar para ingresar ${step.label.toLowerCase()}`}
                 />
 
-                <div className="flex flex-col items-center gap-3 pt-4">
-                  {isListening && <VoiceWave active />}
+                <p className="text-on-surface-muted text-sm text-center">
+                  {isListening
+                    ? interimTranscript || `Di ${step.label.toLowerCase()}...`
+                    : 'Toca para hablar'}
+                </p>
+              </div>
 
-                  <FAB
-                    isListening={isListening}
-                    onClick={isListening ? stop : handleVoice}
-                    disabled={!isSupported}
-                    aria-label={`Hablar para ingresar ${step.label.toLowerCase()}`}
-                  />
+              {error && (
+                <p className="text-error text-sm text-center mt-2">{error}</p>
+              )}
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-                  <p className="text-on-surface-muted text-sm text-center">
-                    {isListening
-                      ? interimTranscript || `Di ${step.label.toLowerCase()}...`
-                      : 'Toca para hablar'}
-                  </p>
-                </div>
-
-                {error && (
-                  <p className="text-error text-sm text-center mt-2">{error}</p>
-                )}
-              </Card>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <div className="flex gap-3 px-4 py-4 pb-8">
-          {currentStep > 0 && (
-            <Button variant="outlined" className="flex-1" onClick={handleBack}>
-              Atrás
-            </Button>
-          )}
-          <Button
-            variant="filled"
-            className="flex-1"
-            onClick={handleNext}
-            disabled={isSaving}
-          >
-            {currentStep === STEPS.length - 1 ? (
-              <>
-                <Check className="w-4 h-4" />
-                {isSaving ? 'Guardando...' : 'Guardar'}
-              </>
-            ) : (
-              'Siguiente'
-            )}
+      <div className="flex gap-3 px-4 py-4 pb-8">
+        {currentStep > 0 && (
+          <Button variant="outlined" className="flex-1" onClick={handleBack}>
+            Atrás
           </Button>
-        </div>
+        )}
+        <Button
+          variant="filled"
+          className="flex-1"
+          onClick={handleNext}
+          disabled={isSaving}
+        >
+          {currentStep === STEPS.length - 1 ? (
+            <>
+              <Check className="w-4 h-4" />
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </>
+          ) : (
+            'Siguiente'
+          )}
+        </Button>
       </div>
     </PageLayout>
   )

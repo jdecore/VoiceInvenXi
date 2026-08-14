@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router'
-import { ErrorBoundary, ToastProvider, PhoneFrame } from '@/components/ui'
+import { ErrorBoundary, ToastProvider, ToastHost, PhoneFrame } from '@/components/ui'
 
 const ScanPage = lazy(() => import('@/pages/ScanPage').then(m => ({ default: m.ScanPage })))
 const SearchPage = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })))
@@ -29,6 +29,7 @@ export default function App() {
       <ErrorBoundary>
         <BrowserRouter>
           <PhoneFrame>
+            <ToastHost />
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/" element={<ScanPage />} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { Package } from 'lucide-react'
-import { Header, Card, StockBadge, NavBar, EmptyState, Skeleton } from '@/components/ui'
+import { PageLayout, Header, Card, ProductRow, EmptyState, Skeleton } from '@/components/ui'
 import { productApi } from '@/api'
 import type { Product } from '@/types'
 
@@ -26,51 +26,41 @@ export function InventoryPage() {
   }
 
   return (
-    <div className="relative h-full flex flex-col bg-surface overflow-hidden">
-      <Header title="Inventario" />
-
-      <div className="flex-1 overflow-y-auto px-4 pb-24">
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-20" />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <EmptyState
-            icon={<Package className="w-8 h-8 text-on-surface-muted" />}
-            title="Sin productos"
-            description="Escanea un código de barras para agregar productos"
-          />
-        ) : (
-          <div className="space-y-3">
-            {products.map((product) => (
-              <Card
-                key={product.id}
-                interactive
-                onClick={() => navigate(`/product/${product.barcode}`)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-brand-container">
-                    <Package className="w-5 h-5 text-brand" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-on-surface font-medium truncate">{product.name}</p>
-                    <p className="text-on-surface-muted text-sm truncate">
-                      {product.brand || 'Sin marca'} {product.category && `• ${product.category}`}
-                    </p>
-                  </div>
-                  <StockBadge stock={product.stock} unit={product.unit} />
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
-        <NavBar />
-      </div>
-    </div>
+    <PageLayout
+      nav
+      header={<Header title="Inventario" />}
+      contentClassName="px-4 pb-24"
+    >
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <EmptyState
+          icon={<Package className="w-8 h-8 text-on-surface-muted" />}
+          title="Sin productos"
+          description="Escanea un código de barras para agregar productos"
+        />
+      ) : (
+        <div className="space-y-3">
+          {products.map((product) => (
+            <Card
+              key={product.id}
+              interactive
+              onClick={() => navigate(`/product/${product.barcode}`)}
+            >
+              <ProductRow
+                name={product.name}
+                meta={`${product.brand || 'Sin marca'} ${product.category && `• ${product.category}`}`}
+                stock={product.stock}
+                unit={product.unit}
+              />
+            </Card>
+          ))}
+        </div>
+      )}
+    </PageLayout>
   )
 }

@@ -64,7 +64,7 @@ Page → relative h-full flex flex-col
 src/
 ├── main.tsx                    # Entry point, renderiza App en StrictMode
 ├── index.css                   # Tailwind CSS imports + theme (colores, animaciones, MD3 light)
-├── App.tsx                     # ToastProvider + ErrorBoundary + BrowserRouter + PhoneFrame + lazy routes
+├── App.tsx                     # ToastProvider + ErrorBoundary + BrowserRouter + PhoneFrame (con ToastHost) + lazy routes
 ├── vite-env.d.ts               # Tipos globales (SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse, SemanticSearchResult
 ├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
@@ -79,20 +79,19 @@ src/
 │   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
 │   └── useCamera.ts            # getUserMedia + capture a blob
 │
-├── components/ui/              # 18 componentes UI con Tailwind CSS (tema MD3 light)
-│   ├── Button.tsx              # Botón MD3 (filled/outlined/text) con variantes
+├── components/ui/              # 17 componentes UI con Tailwind CSS (tema MD3 light)
+│   ├── Button.tsx              # Botón MD3 (filled/tonal/outlined/text) con variantes
 │   ├── Card.tsx                # Card reutilizable con glass effect
 │   ├── Input.tsx               # Input MD3 con label, icono, error state
 │   ├── FAB.tsx                 # Floating Action Button (micrófono)
-│   ├── Badge.tsx               # Badge pequeño
-│   ├── Chip.tsx                # Chip/filter
 │   ├── StockBadge.tsx          # Badge de stock color-coded (verde/ambar/rojo)
+│   ├── StockValue.tsx          # Número de stock + getStockColor (texto, sin pill)
+│   ├── ProductRow.tsx          # Fila estándar de producto (tile + nombre + meta + StockBadge)
 │   ├── Header.tsx              # Header de página con back button
-│   ├── PageLayout.tsx          # Layout base para páginas con scroll
+│   ├── PageLayout.tsx          # Scaffold único: header slot + región scroll + NavBar opcional (nav/scroll/contentClassName)
 │   ├── NavBar.tsx              # Navegación inferior (4 items) flotante
 │   ├── PhoneFrame.tsx          # Contenedor responsive (full-screen mobile, mockup desktop, ambient blobs)
-│   ├── BottomSheet.tsx         # Bottom sheet desplegable
-│   ├── Toast.tsx               # Sistema de toasts (ToastProvider + useToast)
+│   ├── Toast.tsx               # Sistema de toasts (ToastProvider + ToastHost + useToast; host vive dentro de PhoneFrame)
 │   ├── VoiceWave.tsx           # Barras animadas de onda de voz
 │   ├── Skeleton.tsx            # Skeleton loader con shimmer
 │   ├── EmptyState.tsx          # Estado vacío reutilizable
@@ -162,8 +161,18 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 - Todos los componentes usan `background: transparent` para que el ambiente se vea
 
 ### Sistema de Toasts
-- `Toast.tsx` + `useToast.ts`: `ToastProvider` (context) + `useToast()`
+- `Toast.tsx`: `ToastProvider` (context) + `useToast()` + `ToastHost` (renderiza la pila UI)
+- El `ToastHost` se monta **dentro de `PhoneFrame`** (App.tsx) anclado al frame, no a la ventana — en desktop los toasts quedan dentro del mockup de teléfono
 - Toasts glass apilados, icono (check/alert/info), auto-dismiss, animación `motion`, `aria-live="polite"`
+
+### PageLayout (scaffold único)
+- Todas las páginas usan `PageLayout` con la misma estructura: header slot + región scroll + NavBar opcional
+- Props: `header?: ReactNode`, `nav?: boolean` (renderiza NavBar flotante con safe-area), `scroll?: boolean` (default true; `false` para layouts full-bleed como ScanPage), `contentClassName`, `className`
+- El NavBar se posiciona `absolute bottom-0` dentro del layout — no repetir el bloque en cada página
+
+### Lenguaje de fila estándar
+- `ProductRow.tsx`: tile de icono `w-11 h-11 rounded-2xl bg-brand-container` + nombre + meta + `StockBadge` — usado por Inventory y Search
+- Activity usa el mismo ritmo de tiles (`rounded-2xl`) con colores success/error según tipo de movimiento
 
 ### Skeleton loaders
 - `Skeleton.tsx`: utilidad de shimmer con Tailwind

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { Flashlight } from 'lucide-react'
-import { FAB, NavBar } from '@/components/ui'
+import { Flashlight, ScanLine } from 'lucide-react'
+import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -43,7 +43,7 @@ export function ScanPage() {
   }
 
   return (
-    <div className="relative h-full flex flex-col bg-surface-2 overflow-hidden">
+    <PageLayout nav scroll={false} className="!bg-surface-2">
       {/* Camera feed */}
       <div className="relative flex-1 overflow-hidden">
         <video
@@ -54,8 +54,12 @@ export function ScanPage() {
           className="absolute inset-0 w-full h-full object-cover"
         />
         {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface-2">
-            <p className="text-on-surface-muted text-sm">Cámara no disponible</p>
+          <div className="absolute inset-0 flex items-center justify-center !bg-surface-2">
+            <EmptyState
+              icon={<ScanLine className="w-8 h-8 text-on-surface-muted" />}
+              title="Cámara no disponible"
+              description="Verifica los permisos de la cámara en tu navegador"
+            />
           </div>
         )}
 
@@ -115,15 +119,10 @@ export function ScanPage() {
         </div>
       </div>
 
-      {/* Bottom nav - fixed position, consistent with other pages */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center px-4 py-4 pb-[env(safe-area-inset-bottom)]">
-        <NavBar />
-      </div>
-
       {/* Voice search FAB - corner, above nav */}
       <div className="absolute bottom-32 right-5 z-20">
         <FAB onClick={handleMic} />
       </div>
-    </div>
+    </PageLayout>
   )
 }
