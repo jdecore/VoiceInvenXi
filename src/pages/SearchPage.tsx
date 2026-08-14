@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { Search } from 'lucide-react'
+import { Search, Sparkles } from 'lucide-react'
 import { PageLayout, Header, Card, Input, FAB, VoiceWave, Skeleton, EmptyState, ProductRow, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
+import { MOCK_PRODUCTS } from '@/constants'
 import type { SemanticSearchResult } from '@/types'
+
+const SUGGESTIONS = MOCK_PRODUCTS.slice(0, 4).map((p) => p.name)
 
 export function SearchPage() {
   const navigate = useNavigate()
@@ -16,6 +19,7 @@ export function SearchPage() {
   const [results, setResults] = useState<SemanticSearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const debounceRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -36,11 +40,13 @@ export function SearchPage() {
 
     setIsLoading(true)
     setHasSearched(true)
+    setHasError(false)
 
     try {
       const response = await searchApi.semanticSearch(searchQuery)
       setResults(response.results)
     } catch {
+      setHasError(true)
       showToast('error', 'Error al buscar productos')
       setResults([])
     } finally {
@@ -58,8 +64,14 @@ export function SearchPage() {
       } else {
         setResults([])
         setHasSearched(false)
+        setHasError(false)
       }
     }, 400)
+  }
+
+  const handleSuggestion = (suggestion: string) => {
+    setQuery(suggestion)
+    performSearch(suggestion)
   }
 
   const handleMic = () => {
@@ -77,7 +89,8 @@ export function SearchPage() {
   return (
     <PageLayout
       nav
-      header={<Header title="Búsqueda" showBack />}
+      navExtra={<FAB isListening={isListening} onClick={handleMic} />}
+      header={<Header title="Búsqueda" subtitle={results.length > 0 ? `${results.length} resultados` : undefined} showBack />}
       contentClassName="px-4 pb-[calc(10%+8rem)]"
     >
       <div className="pt-1">
@@ -90,40 +103,58 @@ export function SearchPage() {
         />
       </div>
 
-      <div className="flex flex-col items-center gap-3 py-4">
-        <FAB isListening={isListening} onClick={handleMic} />
-        <p className="text-on-surface-muted text-sm">
-          {isListening
-            ? interimTranscript || 'Di algo para buscar...'
-            : 'Toca el micrófono para buscar'}
-        </p>
-      </div>
-
       {isListening && (
-        <div className="flex justify-center pb-4">
+        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface-1 border border-outline-variant/50 px-4 py-3">
           <VoiceWave active />
+          <p className="flex-1 text-on-surface-muted text-sm truncate">
+            {interimTranscript || 'Di algo para buscar...'}
+          </p>
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-error-container border border-error/20">
+        <div className="mt-4 p-3 rounded-xl bg-error-container border border-error/20">
           <p className="text-error text-sm">{error}</p>
         </div>
       )}
 
+      {!hasSearched && !isLoading && (
+        <div className="mt-5">
+          <div className="flex items-center gap-1.5 text-on-surface-muted text-xs font-medium uppercase tracking-wide">
+            <Sparkles className="w-3.5 h-3.5" />
+            Sugerencias
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SUGGESTIONS.map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => handleSuggestion(suggestion)}
+                className="px-3.5 py-2 rounded-full bg-surface-1 border border-outline-variant/50
+                  text-on-surface text-sm font-medium
+                  hover:bg-surface-2 active:bg-surface-3
+                  transition-colors duration-150 active:scale-95"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="mt-5 space-y-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
-      ) : hasSearched && results.length === 0 ? (
+      ) : hasError ? null : hasSearched && results.length === 0 ? (
         <EmptyState
-          title="Sin resultados"
-          description="No se encontraron productos que coincidan con tu búsqueda"
+          icon={<Search className="w-8 h-8 text-on-surface-muted" />}
+          title={query ? `No encontramos "${query}"` : 'Sin resultados'}
+          description="Prueba con otras palabras o usa el micrófono para buscar por voz"
         />
       ) : (
-        <div className="space-y-3">
+        <div className="mt-5 space-y-3">
           {results.map((result) => (
             <Card key={result.id} interactive onClick={() => handleResultClick(result)}>
               <ProductRow
@@ -135,14 +166,6 @@ export function SearchPage() {
             </Card>
           ))}
         </div>
-      )}
-
-      {!hasSearched && !isLoading && (
-        <EmptyState
-          icon={<Search className="w-8 h-8 text-on-surface-muted" />}
-          title="Busca productos"
-          description="Toca el micrófono y di lo que buscas"
-        />
       )}
     </PageLayout>
   )
