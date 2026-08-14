@@ -58,8 +58,8 @@ Page → relative h-full flex flex-col
 - Beep de escaneo con Web Audio (`src/lib/beep.ts`, `playScanBeep`) + `hapticSuccess()` al detectar un código
 - Recuadro de escaneo: esquinas con `corner-pulse` (2.4s), línea de barrido con glow (`scan-line` anima `top` 0 → calc(100%-2px)), `ring` naranja mientras escanea
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
-- Título "VoiceInvenXi" flexible (`flex-1 min-w-0 truncate`) alineado con `pl-[10%]` y **centrado verticalmente** en la top bar (`py-4` simétrico) — nunca se sale del frame
-- Acciones de la top bar en `flex shrink-0` con `pr-[10%]` — los botones conservan su tamaño en cualquier ancho de pantalla
+- Título "VoiceInvenXi" **centrado horizontalmente** (`text-center`) en la top bar, `py-4` simétrico para centrado vertical — nunca se sale del frame
+- Botón "Activo" (dev) en `absolute right-4 top-1/2 -translate-y-1/2` dentro de la top bar
 
 ---
 

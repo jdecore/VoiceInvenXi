@@ -169,22 +169,20 @@ export function ScanPage() {
         </div>
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-2 px-4 py-4">
-          <h1 className="flex-1 min-w-0 truncate text-white text-lg font-bold drop-shadow-md pl-[10%]">
+        <div className="absolute top-0 left-0 right-0 z-10 px-4 py-4">
+          <h1 className="text-center text-white text-lg font-bold drop-shadow-md">
             VoiceInvenXi
           </h1>
-          <div className="flex shrink-0 items-center gap-2 pr-[10%]">
-            {import.meta.env.DEV && (
-              <button
-                onClick={handleSimulateScan}
-                className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
-                  text-on-surface text-xs font-medium shadow-sm
-                  hover:bg-white transition-all duration-150 active:scale-95"
-              >
-                Activo
-              </button>
-            )}
-          </div>
+          {import.meta.env.DEV && (
+            <button
+              onClick={handleSimulateScan}
+              className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
+                text-on-surface text-xs font-medium shadow-sm
+                hover:bg-white transition-all duration-150 active:scale-95"
+            >
+              Activo
+            </button>
+          )}
         </div>
       </div>
     </PageLayout>
