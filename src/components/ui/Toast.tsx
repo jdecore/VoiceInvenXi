@@ -73,7 +73,8 @@ export function ToastHost() {
             key={toast.id}
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            exit={{ opacity: 0, y: -16, scale: 0.96 }}
+            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
             className={`
               flex items-center gap-3 px-4 py-3
               bg-white rounded-2xl shadow-lg

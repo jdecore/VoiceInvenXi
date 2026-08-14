@@ -41,16 +41,19 @@ La app es full-screen y se adapta a cualquier dispositivo de forma automática:
 **Height chain (mobile):**
 ```
 html → height: 100dvh + overflow: hidden + padding safe-area-insets
-body → min-height: 100dvh + position: relative + overflow: hidden
+body → height: 100% + min-height: 100dvh + position: relative + overflow: hidden
 #root → height: 100% + overflow: hidden
-PhoneFrame outer → h-full w-full overflow-hidden
-PhoneFrame inner → absolute inset-0 (mobile), relative + centered (desktop)
+PhoneFrame outer → h-full w-full overflow-hidden (desktop: lg:flex items-center justify-center)
+PhoneFrame inner → h-full w-full (mobile), lg:h-[min(844px,calc(100%-1.5rem))] lg:w-[480px] centrado (desktop)
 Page → relative h-full flex flex-col
 ```
 
+> **Importante:** `body` debe tener `height: 100%` (no solo `min-height`) para que la cadena de `height: 100%` de `#root`/PhoneFrame resuelva de forma definida en móvil. Sin esto, el layout colapsa en dispositivos móviles.
+
 **ScanPage layout:**
 - NavBar fijo en `absolute bottom-0 z-20` (misma posición que el resto de páginas, memoria muscular)
-- FAB de búsqueda por voz en la esquina inferior derecha (`bottom-32 right-5`), encima de la NavBar
+- FAB de búsqueda por voz en la esquina inferior derecha (`right-5 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20`), **misma banda vertical que la NavBar** (no flota a media altura)
+- Hint pill "Apunta al código de barras" en `bottom-48` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav
 - Botón de linterna (torch) en la top bar junto al título
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)
 - Título "VoiceInvenXi" alineado 10% a la derecha (`pl-[10%]`)
@@ -151,7 +154,7 @@ Cada paso muestra un solo campo de entrada + botón de micrófono grande. Los ca
 
 ### CSS base (index.css)
 - `html`: `height: 100dvh` + `overflow: hidden` + padding con `env(safe-area-inset-*)` para soporte de safe areas
-- `body`: `position: relative; min-height: 100dvh; touch-action: manipulation; overflow: hidden`
+- `body`: `position: relative; height: 100%; min-height: 100dvh; touch-action: manipulation; overflow: hidden`
 - `#root`: `height: 100%; overflow: hidden`
 - Scrollbar personalizado: 4px de ancho, translúcido
 

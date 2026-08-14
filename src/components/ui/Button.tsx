@@ -12,7 +12,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-colors duration-150 active:scale-[0.97] active:transition-transform disabled:opacity-50 disabled:cursor-not-allowed'
 
   const variantStyles = {
     filled: 'bg-brand text-white hover:bg-brand-dark shadow-sm',

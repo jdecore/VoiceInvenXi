@@ -160,10 +160,10 @@ export function NewProductPage() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 24 }}
+            initial={{ opacity: 0, x: 28 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ opacity: 0, x: -28 }}
+            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
           >
             <Card>
               <div className="flex items-center justify-between mb-4">

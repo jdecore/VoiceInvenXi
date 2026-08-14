@@ -80,9 +80,9 @@ export function ScanPage() {
           </div>
 
           {/* Hint text */}
-          <div className="absolute bottom-40 left-0 right-0 flex justify-center">
-            <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm">
-              <p className="text-white text-sm font-medium">
+          <div className="absolute bottom-48 left-0 right-0 flex justify-center">
+            <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm text-center">
+              <p className="text-white text-sm font-medium whitespace-nowrap">
                 {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
               </p>
             </div>
@@ -97,7 +97,7 @@ export function ScanPage() {
               onClick={toggleTorch}
               disabled={!isActive}
               aria-label={torchOn ? 'Apagar linterna' : 'Encender linterna'}
-              className={`flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm transition-colors ${
+              className={`flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-sm transition-all duration-150 active:scale-95 ${
                 torchOn
                   ? 'bg-brand text-white'
                   : 'bg-white/90 text-on-surface hover:bg-white'
@@ -110,7 +110,7 @@ export function ScanPage() {
                 onClick={handleSimulateScan}
                 className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm
                   text-on-surface text-xs font-medium shadow-sm
-                  hover:bg-white transition-colors"
+                  hover:bg-white transition-all duration-150 active:scale-95"
               >
                 Activo
               </button>
@@ -119,8 +119,8 @@ export function ScanPage() {
         </div>
       </div>
 
-      {/* Voice search FAB - corner, above nav */}
-      <div className="absolute bottom-32 right-5 z-20">
+      {/* Voice search FAB - corner, same band as nav bar */}
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-5 z-20">
         <FAB onClick={handleMic} />
       </div>
     </PageLayout>

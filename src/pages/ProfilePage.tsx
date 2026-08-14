@@ -15,7 +15,7 @@ export function ProfilePage() {
           <User className="w-10 h-10 text-brand" />
         </div>
         <h2 className="text-on-surface text-xl font-semibold">Operario</h2>
-        <p className="text-on-surface-muted text-sm"> Administrador</p>
+        <p className="text-on-surface-muted text-sm text-center">Administrador</p>
       </div>
 
       <Card interactive onClick={handleLogout}>

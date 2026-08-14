@@ -12,7 +12,8 @@ export function Card({ children, className = '', onClick, interactive = false }:
   if (interactive && onClick) {
     return (
       <motion.div
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ duration: 0.12 }}
         onClick={onClick}
         className={`
           bg-surface-1 rounded-2xl p-4

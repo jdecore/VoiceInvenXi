@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router'
+import { motion, AnimatePresence } from 'motion/react'
 import { ErrorBoundary, ToastProvider, ToastHost, PhoneFrame } from '@/components/ui'
 
 const ScanPage = lazy(() => import('@/pages/ScanPage').then(m => ({ default: m.ScanPage })))
@@ -23,6 +24,36 @@ function LoadingFallback() {
   )
 }
 
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        className="h-full"
+      >
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes location={location}>
+            <Route path="/" element={<ScanPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/product/:barcode" element={<ProductPage />} />
+            <Route path="/new/:barcode" element={<NewProductPage />} />
+            <Route path="/new" element={<ScanPageRedirect />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/activity" element={<ActivityPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Routes>
+        </Suspense>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 export default function App() {
   return (
     <ToastProvider>
@@ -30,18 +61,7 @@ export default function App() {
         <BrowserRouter>
           <PhoneFrame>
             <ToastHost />
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<ScanPage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/product/:barcode" element={<ProductPage />} />
-                <Route path="/new/:barcode" element={<NewProductPage />} />
-                <Route path="/new" element={<ScanPageRedirect />} />
-                <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/activity" element={<ActivityPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-              </Routes>
-            </Suspense>
+            <AnimatedRoutes />
           </PhoneFrame>
         </BrowserRouter>
       </ErrorBoundary>

@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router'
 import { ScanLine, Package, Activity, User } from 'lucide-react'
+import { motion } from 'motion/react'
 import { hapticTap } from '@/lib/haptics'
 
 interface NavItem {
@@ -38,25 +39,30 @@ export function NavBar() {
       {NAV_ITEMS.map((item) => {
         const active = isActive(item.path)
         return (
-          <button
+          <motion.button
             key={item.path}
+            whileTap={{ scale: 0.95 }}
             onClick={() => handleNav(item.path)}
             className={`
               relative flex flex-col items-center justify-center
               w-14 h-12 rounded-2xl
-              transition-all duration-200
+              transition-colors duration-150
               ${active
-                ? 'text-brand bg-brand-container'
-                : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-2'
+                ? 'text-brand'
+                : 'text-on-surface-muted hover:text-on-surface'
               }
             `}
             aria-label={item.label}
           >
-            {item.icon}
             {active && (
-              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-brand" />
+              <motion.span
+                layoutId="nav-active-pill"
+                className="absolute inset-0 rounded-2xl bg-brand-container"
+                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+              />
             )}
-          </button>
+            <span className="relative z-10">{item.icon}</span>
+          </motion.button>
         )
       })}
     </nav>

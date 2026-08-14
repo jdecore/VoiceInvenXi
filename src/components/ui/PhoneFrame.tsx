@@ -6,7 +6,7 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({ children }: PhoneFrameProps) {
   return (
-    <div className="h-full w-full overflow-hidden">
+    <div className="h-full w-full overflow-hidden lg:flex lg:items-center lg:justify-center">
       {/* Ambient background - only visible on desktop */}
       <div className="hidden lg:block absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[20vh] -left-[10vw] w-[55vw] h-[55vw] rounded-full bg-brand/10 blur-[120px] animate-[float_18s_ease-in-out_infinite]" />
@@ -18,7 +18,7 @@ export function PhoneFrame({ children }: PhoneFrameProps) {
       <div className="
         relative z-10
         h-full w-full
-        lg:h-[844px] lg:max-w-[480px] lg:mx-auto lg:my-auto
+        lg:h-[min(844px,calc(100%-1.5rem))] lg:max-w-[480px] lg:w-[480px]
         lg:rounded-[44px]
         lg:border lg:border-outline-variant/30
         lg:shadow-[0_20px_80px_rgba(0,0,0,0.12)]

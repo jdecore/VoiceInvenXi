@@ -17,14 +17,14 @@ export function FAB({ isListening = false, onClick, disabled = false, 'aria-labe
 
   return (
     <motion.button
-      whileTap={{ scale: 0.92 }}
+      whileTap={{ scale: 0.95 }}
       onClick={handleClick}
       disabled={disabled}
       className={`
         relative flex items-center justify-center
         w-14 h-14 rounded-full
         shadow-lg
-        transition-all duration-300
+        transition-colors duration-200
         shrink-0
         ${isListening
           ? 'bg-error text-white shadow-error/30 animate-pulse-mic'
@@ -40,7 +40,7 @@ export function FAB({ isListening = false, onClick, disabled = false, 'aria-labe
           className="absolute inset-0 rounded-full border-2 border-error"
           initial={{ scale: 1, opacity: 0.6 }}
           animate={{ scale: 1.5, opacity: 0 }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
         />
       )}
     </motion.button>

@@ -31,8 +31,8 @@ export function SuccessAnimation({
         className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm"
       >
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 15, stiffness: 200 }}
           className="relative"
         >
@@ -40,7 +40,7 @@ export function SuccessAnimation({
             className="absolute inset-0 rounded-full bg-success/20"
             initial={{ scale: 1 }}
             animate={{ scale: 2.5, opacity: 0 }}
-            transition={{ duration: 1, repeat: Infinity }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'easeOut' }}
           />
           <div className="flex items-center justify-center w-20 h-20 rounded-full bg-success shadow-lg shadow-success/30">
             <motion.div
