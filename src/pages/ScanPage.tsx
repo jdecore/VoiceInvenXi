@@ -9,7 +9,7 @@ import { generateRandomBarcode } from '@/lib/barcode'
 import { playScanBeep } from '@/lib/beep'
 import { hapticSuccess } from '@/lib/haptics'
 
-const SCAN_MAX_RESOLUTION = 640
+const SCAN_MAX_DIMENSION = 600
 const SCAN_INTERVAL_MS = 125 // ~fps 8
 
 const SCAN_FORMATS = [
@@ -90,10 +90,16 @@ export function ScanPage() {
       const sh = Math.min(boxH / scale, vH - sy)
 
       const canvas = getCanvas()
-      const dw = Math.min(sw, SCAN_MAX_RESOLUTION)
-      const dh = (sh * dw) / sw
-      canvas.width = Math.round(dw)
-      canvas.height = Math.round(dh)
+      // Cap al lado largo (aspect-preserving) — sin esto el canvas llegaba a
+      // 615x1080px y ZXing+TRY_HARDER (síncrono, main thread) bloqueaba la
+      // animación y dejaba el escaneo en ~2fps
+      const downscale = Math.min(1, SCAN_MAX_DIMENSION / Math.max(sw, sh))
+      const dw = sw * downscale
+      const dh = sh * downscale
+      if (canvas.width !== Math.round(dw) || canvas.height !== Math.round(dh)) {
+        canvas.width = Math.round(dw)
+        canvas.height = Math.round(dh)
+      }
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
       if (!ctx) return
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh)
@@ -236,12 +242,16 @@ export function ScanPage() {
             <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-brand rounded-bl-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-brand rounded-br-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
 
-            {/* Scanning line */}
-            <div className="absolute left-3 right-3 top-0 h-[2px] rounded-full
-              bg-gradient-to-r from-transparent via-brand to-transparent
-              shadow-[0_0_10px_rgba(249,115,22,0.9)]
-              animate-[scan-line_2.4s_ease-in-out_infinite]
-            " />
+            {/* Scanning line — el wrapper da el 100% de altura para el
+                translateY (composited); animar top bloqueaba el main thread
+                y se veía muy lenta durante el decode */}
+            <div className="absolute left-3 right-3 top-0 bottom-0 overflow-hidden">
+              <div className="h-[2px] rounded-full
+                bg-gradient-to-r from-transparent via-brand to-transparent
+                shadow-[0_0_10px_rgba(249,115,22,0.9)]
+                animate-[scan-line_2.4s_ease-in-out_infinite]
+              " />
+            </div>
           </div>
 
           {/* Hint text */}
