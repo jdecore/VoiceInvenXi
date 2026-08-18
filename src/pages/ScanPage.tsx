@@ -40,9 +40,22 @@ export function ScanPage() {
       .catch(() => setCameraError(true))
 
     return () => {
-      scanner.stop().catch(() => {})
-      scanner.clear()
-      scannerRef.current = null
+      if (scannerRef.current === scanner) scannerRef.current = null
+      // html5-qrcode: clear() lanza "Cannot clear while scan is ongoing" si no
+      // esperamos a que stop() (async) termine primero — por eso el orden.
+      // Además, en StrictMode (dev) un segundo scanner puede montarse sobre el
+      // mismo elemento; clear() de la instancia vieja lo rompería.
+      void scanner
+        .stop()
+        .catch(() => {})
+        .finally(() => {
+          if (scannerRef.current !== scanner) return
+          try {
+            scanner.clear()
+          } catch {
+            // Ya limpiado o elemento desmontado — no-op
+          }
+        })
     }
   }, [speak])
 
