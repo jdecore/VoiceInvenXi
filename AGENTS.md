@@ -54,7 +54,7 @@ Page → relative h-full flex flex-col
 - NavBar fijo en `absolute bottom-[10%] z-20` (elevada un 10% de la altura del frame; misma posición en todas las páginas, memoria muscular)
 - FAB de búsqueda por voz **dentro de la misma fila que la NavBar** (`PageLayout navExtra`, `items-center gap-2`) — el micrófono y la navbar comparten exactamente la misma altura y nunca se solapan en pantallas angostas
 - Hint pill "Apunta al código de barras" posicionado con `bottom-[calc(10%+7rem)]` centrado (`text-center whitespace-nowrap`), encima de la zona FAB/nav — escala fluido con la altura del frame
-- Escaneo automático real con `BarcodeDetector` (loop de 400ms sobre el video, formatos EAN/UPC/Code128/QR). Si el navegador no lo soporta, se muestra un aviso sutil
+- Escaneo automático real con `html5-qrcode` (ZXing, `#scan-region` dentro de un strip 16:9 centrado en `aspect-video` — evita la distorsión del sampler que ocurre con regiones de aspecto distinto a la cámara). Decodifica QR/EAN/UPC/Code128/Code39 y funciona en todos los navegadores (incl. iOS Safari, donde `BarcodeDetector` no existe). fps: 8, `facingMode: 'environment'`
 - Beep de escaneo con Web Audio (`src/lib/beep.ts`, `playScanBeep`) + `hapticSuccess()` al detectar un código
 - Recuadro de escaneo: esquinas con `corner-pulse` (2.4s), línea de barrido con glow (`scan-line` anima `top` 0 → calc(100%-2px)), `ring` naranja mientras escanea
 - Botón "Activo" (demo/simulación de escaneo) solo visible en desarrollo (`import.meta.env.DEV`)

@@ -1,36 +1,21 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { ScanLine } from 'lucide-react'
+import { Html5Qrcode } from 'html5-qrcode'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
-import { useCamera } from '@/hooks/useCamera'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
 import { MOCK_PRODUCTS } from '@/constants'
 import { playScanBeep } from '@/lib/beep'
 import { hapticSuccess } from '@/lib/haptics'
 
-const BARCODE_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code']
-
-function createDetector(): BarcodeDetector | null {
-  if (typeof window === 'undefined' || !window.BarcodeDetector) return null
-  try {
-    return new window.BarcodeDetector({ formats: BARCODE_FORMATS })
-  } catch {
-    try {
-      return new window.BarcodeDetector()
-    } catch {
-      return null
-    }
-  }
-}
-
 export function ScanPage() {
   const navigate = useNavigate()
-  const { videoRef, isActive, start, stop } = useCamera()
   const { speak } = useTTS()
   const [isScanning, setIsScanning] = useState(false)
-  const [supportsBarcode, setSupportsBarcode] = useState(true)
+  const [cameraError, setCameraError] = useState(false)
 
+  const scannerRef = useRef<Html5Qrcode | null>(null)
   const isScanningRef = useRef(isScanning)
   const handleScanRef = useRef<(barcode: string) => void>(() => {})
 
@@ -39,10 +24,27 @@ export function ScanPage() {
   }, [isScanning])
 
   useEffect(() => {
-    start()
-    speak('Apunta la cámara al código de barras')
-    return () => stop()
-  }, [])
+    const scanner = new Html5Qrcode('scan-region', false)
+    scannerRef.current = scanner
+
+    scanner
+      .start(
+        { facingMode: 'environment' },
+        { fps: 8 },
+        (decodedText) => {
+          if (!isScanningRef.current) handleScanRef.current(decodedText)
+        },
+        () => {},
+      )
+      .then(() => speak('Apunta la cámara al código de barras'))
+      .catch(() => setCameraError(true))
+
+    return () => {
+      scanner.stop().catch(() => {})
+      scanner.clear()
+      scannerRef.current = null
+    }
+  }, [speak])
 
   const handleScan = useCallback(async (barcode: string) => {
     if (isScanningRef.current) return
@@ -50,6 +52,7 @@ export function ScanPage() {
     setIsScanning(true)
     playScanBeep()
     hapticSuccess()
+    scannerRef.current?.stop().catch(() => {})
 
     try {
       const product = await productApi.getByBarcode(barcode)
@@ -67,31 +70,6 @@ export function ScanPage() {
   useEffect(() => {
     handleScanRef.current = handleScan
   }, [handleScan])
-
-  useEffect(() => {
-    const detector = createDetector()
-    if (!detector) {
-      setSupportsBarcode(false)
-      return
-    }
-
-    const interval = window.setInterval(async () => {
-      if (isScanningRef.current) return
-      const video = videoRef.current
-      if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
-
-      try {
-        const codes = await detector.detect(video)
-        if (codes.length > 0) {
-          handleScanRef.current(String(codes[0].rawValue))
-        }
-      } catch {
-        // Frame no listo o error transitorio — reintentar en el siguiente tick
-      }
-    }, 400)
-
-    return () => window.clearInterval(interval)
-  }, [])
 
   const handleSimulateScan = () => {
     const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)]
@@ -111,15 +89,16 @@ export function ScanPage() {
     >
       {/* Camera feed */}
       <div className="relative flex-1 overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center !bg-surface-2">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/40" />
+
+        {/* Camera strip — html5-qrcode renders video + canvas aquí (16:9, sin distorsión) */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 aspect-video overflow-hidden">
+          <div id="scan-region" className="absolute inset-0" />
+        </div>
+
+        {cameraError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-surface-2">
             <EmptyState
               icon={<ScanLine className="w-8 h-8 text-on-surface-muted" />}
               title="Cámara no disponible"
@@ -130,7 +109,6 @@ export function ScanPage() {
 
         {/* Scan viewfinder overlay */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-black/20" />
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
             w-[min(70vw,280px,45dvh)] h-[min(70vw,280px,45dvh)]
             transition-all duration-200
@@ -158,14 +136,6 @@ export function ScanPage() {
               </p>
             </div>
           </div>
-
-          {!supportsBarcode && (
-            <div className="absolute bottom-[calc(10%+9.5rem)] left-0 right-0 flex justify-center">
-              <p className="text-white/70 text-xs px-4 text-center">
-                Escaneo automático no disponible en este navegador
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Top bar */}
