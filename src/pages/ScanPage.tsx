@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { ScanLine } from 'lucide-react'
-import * as ZXing from 'html5-qrcode/third_party/zxing-js.umd'
+import * as ZXing from '@/lib/zxing/zxing-js.umd'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'

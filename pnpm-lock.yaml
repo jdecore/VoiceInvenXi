@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      html5-qrcode:
-        specifier: ^2.3.8
-        version: 2.3.8
       lucide-react:
         specifier: ^1.27.0
         version: 1.29.0(react@19.2.8)
@@ -523,9 +520,6 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
-
-  html5-qrcode@2.3.8:
-    resolution: {integrity: sha512-jsr4vafJhwoLVEDW3n1KvPnCCXWaQfRng0/EEYk1vNcQGcG/htAdhJX0be8YyqMoSz7+hZvOZSTAepsabiuhiQ==}
 
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
@@ -1122,8 +1116,6 @@ snapshots:
     optional: true
 
   graceful-fs@4.2.11: {}
-
-  html5-qrcode@2.3.8: {}
 
   jiti@2.7.0: {}
 
