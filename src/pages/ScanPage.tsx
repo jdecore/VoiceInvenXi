@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { ScanLine } from 'lucide-react'
-import { ZXingHtml5QrcodeDecoder } from 'html5-qrcode/esm/zxing-html5-qrcode-decoder'
-import { BaseLoggger, Html5QrcodeSupportedFormats } from 'html5-qrcode/esm/core'
+import * as ZXing from 'html5-qrcode/third_party/zxing-js.umd'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
@@ -13,19 +12,36 @@ import { hapticSuccess } from '@/lib/haptics'
 const SCAN_MAX_RESOLUTION = 640
 const SCAN_INTERVAL_MS = 125 // ~fps 8
 
-const decoder = new ZXingHtml5QrcodeDecoder(
-  [
-    Html5QrcodeSupportedFormats.QR_CODE,
-    Html5QrcodeSupportedFormats.EAN_13,
-    Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.UPC_A,
-    Html5QrcodeSupportedFormats.UPC_E,
-    Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.CODE_39,
-  ],
-  false,
-  new BaseLoggger(false),
-)
+const SCAN_FORMATS = [
+  ZXing.BarcodeFormat.QR_CODE,
+  ZXing.BarcodeFormat.EAN_13,
+  ZXing.BarcodeFormat.EAN_8,
+  ZXing.BarcodeFormat.UPC_A,
+  ZXing.BarcodeFormat.UPC_E,
+  ZXing.BarcodeFormat.CODE_128,
+  ZXing.BarcodeFormat.CODE_39,
+]
+
+// Solo los formatos soportados (limita lectores -> más rápido) + TRY_HARDER
+// para leer códigos pequeños o con poca resolución
+const decodeHints = new Map<ZXing.DecodeHintType, unknown>([
+  [ZXing.DecodeHintType.POSSIBLE_FORMATS, SCAN_FORMATS],
+  [ZXing.DecodeHintType.TRY_HARDER, true],
+])
+
+function decodeCanvas(canvas: HTMLCanvasElement): Promise<string> {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new ZXing.MultiFormatReader(false, decodeHints)
+      const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas)
+      const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source))
+      const result = reader.decode(bitmap)
+      resolve(result.text)
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
 
 export function ScanPage() {
   const navigate = useNavigate()
@@ -82,8 +98,8 @@ export function ScanPage() {
       if (!ctx) return
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh)
 
-      const result = await decoder.decodeAsync(canvas)
-      if (!isScanningRef.current) handleScanRef.current(result.text)
+      const result = await decodeCanvas(canvas)
+      if (!isScanningRef.current) handleScanRef.current(result)
     } catch {
       // Sin código en este frame — continuar escaneando
     } finally {
@@ -98,12 +114,16 @@ export function ScanPage() {
 
     const startCamera = async () => {
       try {
+        // Resolución máxima (1920x1080) — lo que ve el usuario es el recorte
+        // cover del centro del frame nativo, a resolución completa
+        // (sin aspectRatio ideal: forzaba a la cámara a resoluciones raras y
+        // bajas, se veía borroso y no decodificaba)
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
             facingMode: { ideal: 'environment' },
-            width: { ideal: 1280, max: 1920 },
-            aspectRatio: { ideal: window.innerHeight / window.innerWidth },
+            width: { ideal: 1920, max: 1920 },
+            height: { ideal: 1080, max: 1080 },
           },
         })
         if (cancelled) {
