@@ -1,16 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
-import { speak } from '@/lib/elevenlabs'
 
 export function useTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
   const stopSpeaking = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
     if (utteranceRef.current) {
       window.speechSynthesis?.cancel()
       utteranceRef.current = null
@@ -19,6 +13,11 @@ export function useTTS() {
   }, [])
 
   const speakNative = useCallback((text: string) => {
+    if (!('speechSynthesis' in window)) {
+      setIsSpeaking(false)
+      return
+    }
+
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'es-ES'
@@ -38,37 +37,10 @@ export function useTTS() {
     window.speechSynthesis.speak(utterance)
   }, [])
 
-  const speakText = useCallback(async (text: string) => {
+  const speakText = useCallback((text: string) => {
     stopSpeaking()
     setIsSpeaking(true)
-
-    if ('speechSynthesis' in window) {
-      speakNative(text)
-      return
-    }
-
-    try {
-      const blob = await speak(text)
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      audioRef.current = audio
-
-      audio.onended = () => {
-        URL.revokeObjectURL(url)
-        audioRef.current = null
-        setIsSpeaking(false)
-      }
-
-      audio.onerror = () => {
-        URL.revokeObjectURL(url)
-        audioRef.current = null
-        setIsSpeaking(false)
-      }
-
-      await audio.play()
-    } catch {
-      setIsSpeaking(false)
-    }
+    speakNative(text)
   }, [stopSpeaking, speakNative])
 
   return { speak: speakText, isSpeaking, stop: stopSpeaking }

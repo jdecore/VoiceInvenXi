@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { transcribe } from '@/lib/elevenlabs'
+import { transcribe } from '@/lib/stt'
 
 interface UseSTT {
   isListening: boolean

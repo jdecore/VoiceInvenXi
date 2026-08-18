@@ -4,10 +4,9 @@ import { Search, Sparkles } from 'lucide-react'
 import { PageLayout, Header, Card, Input, FAB, VoiceWave, Skeleton, EmptyState, ProductRow, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
-import { MOCK_PRODUCTS } from '@/constants'
 import type { SemanticSearchResult } from '@/types'
 
-const SUGGESTIONS = MOCK_PRODUCTS.slice(0, 4).map((p) => p.name)
+const SUGGESTIONS = ['Aceite de oliva', 'Arroz', 'Leche', 'Papel higiénico']
 
 export function SearchPage() {
   const navigate = useNavigate()

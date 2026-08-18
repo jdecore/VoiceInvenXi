@@ -6,17 +6,18 @@ load_dotenv()
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./local.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL no está definida. Configúrala en el dashboard de Render o en backend/.env"
+    )
 
-IS_POSTGRES = DATABASE_URL.startswith("postgresql")
+DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-if IS_POSTGRES:
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-connect_args = {}
-if IS_POSTGRES:
-    connect_args["statement_cache_size"] = 0
-    connect_args["ssl"] = "require"
+connect_args = {
+    "statement_cache_size": 0,
+    "ssl": "require",
+}
 
 engine = create_async_engine(
     DATABASE_URL,

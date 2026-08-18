@@ -10,3 +10,6 @@ __pycache__/
 *.pyo
 local.db
 *.db
+
+# Supabase CLI local state
+supabase/.temp/

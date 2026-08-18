@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { PageLayout, Header, Card, Input, Button, FAB, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
-import { productApi } from '@/api'
+import { productApi, agentApi } from '@/api'
 
 interface WizardStep {
   key: string
@@ -59,16 +59,38 @@ export function NewProductPage() {
     if (!transcript) return
 
     const step = STEPS[currentStep]
+    let cancelled = false
     setValues((prev) => ({ ...prev, [step.field]: transcript }))
 
-    if (step.autoAdvance && step.required === false) {
-      setTimeout(() => {
-        if (currentStep < STEPS.length - 1) {
-          setCurrentStep((prev) => prev + 1)
-        }
+    if (currentStep === 0) {
+      agentApi.parseProduct(transcript)
+        .then((fields) => {
+          if (cancelled || !fields) return
+          setValues((prev) => {
+            const next = { ...prev }
+            for (const [key, value] of Object.entries(fields)) {
+              if (key === 'confidence' || !value) continue
+              const field = key as keyof typeof INITIAL_VALUES
+              if (!next[field]) next[field] = String(value)
+            }
+            return next
+          })
+        })
+        .catch(() => {})
+    }
+
+    let timer: number | undefined
+    if (step.autoAdvance) {
+      timer = window.setTimeout(() => {
+        setCurrentStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev))
       }, 600)
     }
-  }, [transcript])
+
+    return () => {
+      cancelled = true
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
+  }, [transcript, currentStep])
 
   const handleVoice = () => {
     reset()

@@ -26,7 +26,3 @@ export function hapticSuccess(): void {
 export function hapticTap(): void {
   haptic(10)
 }
-
-export function hapticError(): void {
-  haptic([30, 30, 30])
-}

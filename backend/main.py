@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from database import engine, Base
-from routers import products, movements, elevenlabs, search
+from routers import products, movements, elevenlabs, search, agent as agent_router
+from needle_agent import warmup as needle_warmup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -25,6 +26,11 @@ async def lifespan(app: FastAPI):
         logger.info("Database tables created/verified")
     except Exception as e:
         logger.warning(f"create_all failed (tables may already exist): {e}")
+
+    try:
+        needle_warmup()
+    except Exception as e:
+        logger.warning(f"Needle warmup failed: {e}")
 
     yield
 
@@ -45,6 +51,7 @@ app.include_router(products.router)
 app.include_router(movements.router)
 app.include_router(elevenlabs.router)
 app.include_router(search.router)
+app.include_router(agent_router.router)
 
 
 @app.exception_handler(Exception)

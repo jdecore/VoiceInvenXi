@@ -1,13 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { MOCK_PRODUCTS } from '@/constants'
+import { generateRandomBarcode } from '@/lib/barcode'
 
 export function ScanPageRedirect() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)]
-    navigate(`/new/${randomProduct.barcode}`, { replace: true })
+    navigate(`/new/${generateRandomBarcode()}`, { replace: true })
   }, [navigate])
 
   return null

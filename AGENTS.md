@@ -72,17 +72,20 @@ src/
 ├── App.tsx                     # ToastProvider + ErrorBoundary + BrowserRouter + PhoneFrame (con ToastHost) + lazy routes
 ├── vite-env.d.ts               # Tipos globales (SpeechRecognition, SpeechRecognitionErrorEvent)
 ├── types.ts                    # Interfaces: Product, Movement, CreateProductDTO, CreateMovementDTO, ApiResponse, SemanticSearchResult
-├── constants.ts                # API_BASE URL, MOCK_PRODUCTS array, findMockProduct()
-├── api.ts                      # Fetcher genérico (timeout 120s, extrae error de detail.message) + productApi + movementApi + searchApi
+├── constants.ts                # API_BASE URL
+├── api.ts                      # Fetcher genérico (timeout 120s, extrae error de detail.message) + productApi + movementApi + searchApi + agentApi
 │
 ├── lib/
-│   ├── elevenlabs.ts           # Cliente para POST /api/tts y /api/stt
-│   └── haptics.ts              # Wrapper de navigator.vibrate (feature-check, no-op en desktop/https-fail)
+│   ├── stt.ts                  # Cliente para POST /api/stt (transcribe audio → texto)
+│   ├── haptics.ts              # Wrapper de navigator.vibrate (feature-check, no-op en desktop/https-fail)
+│   ├── barcode.ts              # generateRandomBarcode() — EAN-13 válido para simulación/scanner dev
+│   ├── beep.ts                 # playScanBeep — beep de escaneo con Web Audio
+│   ├── numbers.ts              # parseSpanishNumber — parser local de números en español (fallback offline)
+│   └── elevenlabs.ts           # (ELIMINADO — TTS ya no usa ElevenLabs; el audio usa speechSynthesis nativo)
 │
 ├── hooks/
 │   ├── useSTT.ts               # STT: Web Speech API preferido, ElevenLabs MediaRecorder como fallback
-│   ├── useTTS.ts               # TTS: speechSynthesis nativo preferido, ElevenLabs como fallback
-│   └── useCamera.ts            # getUserMedia + capture a blob
+│   └── useTTS.ts               # TTS: speechSynthesis nativo (sin ElevenLabs)
 │
 ├── components/ui/              # 17 componentes UI con Tailwind CSS (tema MD3 light)
 │   ├── Button.tsx              # Botón MD3 (filled/tonal/outlined/text) con variantes
@@ -297,19 +300,6 @@ Crea un nuevo producto.
 }
 ```
 
-#### POST /api/tts
-Convierte texto a voz usando ElevenLabs.
-
-**Request body:**
-```json
-{
-  "text": "Aceite de Oliva, 120 unidades en stock",
-  "voice_id": "LnGOA2SxH2fX1e1iNzEp"
-}
-```
-
-**Response (200):** Audio MP3 (`audio/mpeg`).
-
 #### POST /api/stt
 Convierte audio a texto usando ElevenLabs.
 
@@ -321,6 +311,42 @@ Convierte audio a texto usando ElevenLabs.
   "text": "veinte unidades"
 }
 ```
+
+#### POST /api/agent/parse-movement
+Extrae cantidad y tipo de movimiento de un transcript de voz usando Cactus Needle (modelo local en el backend, sin red).
+
+**Request body:**
+```json
+{
+  "text": "veinte unidades de entrada"
+}
+```
+
+**Response exitosa (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "quantity": 20,
+    "type": "in",
+    "confidence": 0.7799
+  }
+}
+```
+
+**Refusal/confianza baja (422):** `detail.message` con instrucciones para ingresar manualmente. El frontend escala al parser local `parseSpanishNumber` + toggle de tipo.
+
+#### POST /api/agent/parse-product
+Extrae campos de producto (name/brand/category/presentation/unit) de una frase de voz con Cactus Needle.
+
+**Request body:**
+```json
+{
+  "text": "aceite de oliva extra virgen, botella 500ml, abarrotes"
+}
+```
+
+**Response exitosa (200):** `data` con los campos encontrados + `confidence`. En español el modelo base suele rechazar (422) → el wizard sigue el flujo manual paso a paso. Ver tech debt #12 (hace falta LoRA fine-tune para desbloquearlo).
 
 #### GET /api/movements
 Lista todos los movimientos con nombre del producto.
@@ -471,17 +497,19 @@ interface SemanticSearchResult extends Product {
 ### Estructura
 ```
 backend/
-├── main.py                 # FastAPI app, lifespan context manager, CORS configurable, health check con DB
-├── database.py             # SQLAlchemy async + asyncpg (load_dotenv, ssl=require, statement_cache_size=0)
+├── main.py                 # FastAPI app, lifespan context manager (incl. warmup de Needle), CORS configurable, health check con DB
+├── database.py             # SQLAlchemy async + asyncpg (load_dotenv, ssl=require, statement_cache_size=0). Fail-fast sin DATABASE_URL
 ├── models.py               # SQLAlchemy models (PG_UUID para columnas id/product_id, Vector(1024) embedding)
 ├── schemas.py              # Pydantic schemas (model_validator para convertir UUID→str)
+├── needle_agent.py         # Cactus Needle: tools de movimiento/producto, get_agent(), warmup(), _call() con gate de confianza
 ├── embeddings.py           # Cohere (primario) + Jina (fallback), batch embeddings (96 texts/request)
 ├── routers/
 │   ├── products.py         # GET /api/products, GET /api/products/:barcode, POST /api/products
 │   ├── movements.py        # GET /api/movements, POST /api/movements
 │   ├── search.py           # POST /api/search/semantic (queries parametrizadas), POST /api/search/seed-embeddings (batch)
-│   └── elevenlabs.py       # POST /api/tts, POST /api/stt (proxy a ElevenLabs)
-├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, aiosqlite, httpx, python-multipart, python-dotenv, pgvector, cohere
+│   ├── agent.py            # POST /api/agent/parse-movement, POST /api/agent/parse-product (Cactus Needle)
+│   └── elevenlabs.py       # POST /api/stt (proxy a ElevenLabs)
+├── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, httpx, python-multipart, python-dotenv, pgvector, cactus-needle
 ├── init.sql                # Script completo: tablas (con embedding + HNSW index) + 32 productos + movimientos (pegar en Supabase SQL Editor)
 ├── setup.sql               # Solo tablas (con embedding + HNSW index, sin datos)
 ├── seed.sql                # Solo datos (después de setup.sql)
@@ -599,7 +627,7 @@ uvicorn main:app --reload --port 8000
 
 ## Reglas para el Backend Agent
 
-1. **Respeta el `ApiResponse<T>` wrapper** - Todos los endpoints de negocio deben devolver `{ success: boolean, data: T, message?: string }`. Los endpoints `/api/tts` y `/api/stt` son proxies a ElevenLabs y devuelven formatos diferentes (audio MP3 y `{ text }` respectivamente).
+1. **Respeta el `ApiResponse<T>` wrapper** - Todos los endpoints de negocio (products, movements, search, agent) deben devolver `{ success: boolean, data: T, message?: string }`. El endpoint `/api/stt` es un proxy a ElevenLabs y devuelve `{ text }`. Los endpoints de agent devuelven 422 (o 503) con `detail.message` descriptivo cuando el modelo rechaza o falla — el frontend escala al parser local.
 2. **statement_cache_size=0** - En `database.py` está configurado porque Supabase usa pgbouncer (pooler) que no soporta prepared statements de asyncpg.
 3. **El barcode es string, no number** - Puede contener letras en el futuro.
 4. **El stock se actualiza en el backend** - El frontend solo lee el stock, no lo muta directamente.
@@ -614,7 +642,7 @@ uvicorn main:app --reload --port 8000
 
 ## Testing del Frontend
 
-Para probar el frontend sin backend, ejecutar `pnpm run dev` y usar los mock data que están en `src/constants.ts`. El `ScanPage` simula escaneos aleatorios de los 5 productos mock.
+Para probar el frontend sin backend, ejecutar `pnpm run dev`. El `ScanPage` simula escaneos aleatorios de códigos de barras EAN-13 válidos vía `generateRandomBarcode()`.
 
 **TTS/STT en desarrollo**: Sin backend, los hooks `useTTS` y `useSTT` fallback automáticamente a las APIs nativas del navegador (`window.speechSynthesis` y `SpeechRecognition`). No requieren configuración adicional.
 
@@ -624,8 +652,8 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 
 ## Tech Debt / Known Issues
 
-1. **Mock data**: Los 5 productos en `constants.ts` son solo para desarrollo. El backend real los reemplazará.
-2. **ElevenLabs + fallback Web Speech**: TTS (`useTTS.ts`) y STT (`useSTT.ts`) intentan ElevenLabs vía backend proxy. Si falla (desarrollo sin backend), caen automáticamente a `speechSynthesis` y `SpeechRecognition` nativos del navegador. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
+1. **Mock data eliminado**: Ya no hay productos mock en el frontend. El `ScanPage` simula escaneos con `generateRandomBarcode()`; para datos reales se necesita el backend.
+2. **TTS / STT**: TTS usa `speechSynthesis` nativo del navegador (sin ElevenLabs). STT intenta ElevenLabs vía backend proxy (`POST /api/stt`); si falla (desarrollo sin backend), cae a `SpeechRecognition` nativo. Voice ID por defecto: `LnGOA2SxH2fX1e1iNzEp`.
 3. **STT error handling**: `useSTT` expone un estado `error` con mensajes como "Permiso de micrófono denegado", "No se detectó voz", "Tiempo de espera agotado". Timeout de 10s en Web Speech API.
 4. **Audio de confirmación con delay**: En `ProductPage`, el TTS de confirmación se reproduce con 2.5s de delay después del overlay de éxito.
 5. **No hay autenticación**: El backend actual no requiere auth. Agregar JWT/API keys cuando sea necesario.
@@ -635,4 +663,5 @@ Para probar con backend real, crear la variable de entorno `VITE_API_URL` apunta
 9. **Supabase RLS deshabilitado**: Las tablas `products` y `movements` tienen RLS deshabilitado. El backend se conecta vía PostgreSQL directo (pooler puerto 6543) con el usuario `postgres`, que bypasea RLS. Si se necesita re-habilitar RLS, crear policies de INSERT/SELECT para el rol de conexión.
 10. **Error handling en frontend**: `productApi.create` y `movementApi.create` propagan errores reales al UI (no hay catch silencioso). El `fetcher` extrae mensajes de error de `detail.message` de FastAPI. Timeout de 120s para cold-starts de Render.
 11. **Semantic search (RAG)**: `POST /api/search/semantic` busca productos por similitud vectorial usando pgvector. `POST /api/search/seed-embeddings` genera embeddings para todos los productos. La columna `embedding vector(1024)` debe existir en la tabla `products`. Los embeddings se generan con Cohere (primario) y Jina como fallback automático cuando Cohere rate-limite (429) o no esté configurado. Después de crear productos nuevos, llamar a `/api/search/seed-embeddings` para generar sus embeddings.
-12. **Fondo ambiente**: `PhoneFrame.tsx` define 3 blobs animados (naranja, verde, púrpura) con blur. Todos los componentes usan `background: transparent` para que el ambiente se vea. Los blobs solo son visibles en desktop (`hidden lg:block`).
+12. **Cactus Needle (agent)**: `POST /api/agent/parse-movement` y `parse-product` extraen intentos de voz con el modelo local `cactus-needle` (sfairXC/FsfairX-LLaMA3-RM-v0.1, ~14MB, run en GPU/CPU en Render, sin red). Gate de confianza: `NEEDLE_CONFIDENCE_THRESHOLD` (default 0.35) — si la confianza del call es menor, devuelve 422 y el frontend escala a `parseSpanishNumber` + inputs manuales. El engine se descarga una vez de Hugging Face al primer warmup (requiere red en el arranque; aviso de "unauthenticated requests" es inofensivo). **Calibración empírica**: descriptions/tools cortos calibran mejor (few-shot largo rompió la confianza: 0.83 → 0.003); multi-tool (5 calls) calibra honesto mientras single-tool forzado infla falsos positivos; en español `parse-product` casi siempre queda bajo el umbral (conf ~0.0) → el wizard usa dictado paso a paso. Probar cambios de prompt SIEMPRE con smoke test en `/tmp/opencode/needle-venv` (cactus-needle instalado) y medir confianza con `NEEDLE_CONFIDENCE_THRESHOLD=0.01`.
+13. **Fondo ambiente**: `PhoneFrame.tsx` define 3 blobs animados (naranja, verde, púrpura) con blur. Todos los componentes usan `background: transparent` para que el ambiente se vea. Los blobs solo son visibles en desktop (`hidden lg:block`).

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, Integer, ForeignKey, DateTime, Column
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from database import Base, IS_POSTGRES
+from database import Base
 
 try:
     from pgvector.sqlalchemy import Vector
@@ -20,7 +20,7 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-_id_type = PG_UUID(as_uuid=False) if IS_POSTGRES else String
+_id_type = PG_UUID(as_uuid=False)
 
 
 class Product(Base):

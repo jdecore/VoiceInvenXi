@@ -5,7 +5,7 @@ import { Html5Qrcode } from 'html5-qrcode'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
-import { MOCK_PRODUCTS } from '@/constants'
+import { generateRandomBarcode } from '@/lib/barcode'
 import { playScanBeep } from '@/lib/beep'
 import { hapticSuccess } from '@/lib/haptics'
 
@@ -72,8 +72,7 @@ export function ScanPage() {
   }, [handleScan])
 
   const handleSimulateScan = () => {
-    const randomProduct = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)]
-    handleScan(randomProduct.barcode)
+    handleScan(generateRandomBarcode())
   }
 
   const handleMic = () => {

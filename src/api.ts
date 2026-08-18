@@ -1,5 +1,5 @@
-import { API_BASE, findMockProduct } from './constants'
-import type { ApiResponse, Product, Movement, SemanticSearchResponse, CreateProductDTO, CreateMovementDTO } from './types'
+import { API_BASE } from './constants'
+import type { ApiResponse, Product, Movement, SemanticSearchResponse, CreateProductDTO, CreateMovementDTO, MovementIntent, ProductFields } from './types'
 
 async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`
@@ -15,16 +15,18 @@ async function fetcher<T>(endpoint: string, options?: RequestInit): Promise<T> {
     },
   })
 
-  clearTimeout(timeout)
+  try {
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      const msg = body?.detail?.message || (typeof body?.detail === 'string' ? body.detail : null) || body?.message
+      throw new Error(msg || `Error HTTP ${response.status}`)
+    }
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    const msg = body?.detail?.message || (typeof body?.detail === 'string' ? body.detail : null) || body?.message
-    throw new Error(msg || `Error HTTP ${response.status}`)
+    const result: ApiResponse<T> = await response.json()
+    return result.data
+  } finally {
+    clearTimeout(timeout)
   }
-
-  const result: ApiResponse<T> = await response.json()
-  return result.data
 }
 
 export const productApi = {
@@ -37,13 +39,7 @@ export const productApi = {
   },
 
   getByBarcode: async (barcode: string): Promise<Product> => {
-    try {
-      return await fetcher<Product>(`/api/products/${barcode}`)
-    } catch {
-      const mock = findMockProduct(barcode)
-      if (mock) return mock
-      throw new Error('Producto no encontrado')
-    }
+    return await fetcher<Product>(`/api/products/${barcode}`)
   },
 
   create: async (data: CreateProductDTO): Promise<Product> => {
@@ -76,6 +72,22 @@ export const searchApi = {
     return await fetcher<SemanticSearchResponse>('/api/search/semantic', {
       method: 'POST',
       body: JSON.stringify({ query }),
+    })
+  },
+}
+
+export const agentApi = {
+  parseMovement: async (text: string): Promise<MovementIntent | null> => {
+    return await fetcher<MovementIntent | null>('/api/agent/parse-movement', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    })
+  },
+
+  parseProduct: async (text: string): Promise<ProductFields | null> => {
+    return await fetcher<ProductFields | null>('/api/agent/parse-product', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
     })
   },
 }

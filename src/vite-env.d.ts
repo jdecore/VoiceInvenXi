@@ -50,23 +50,3 @@ interface Window {
   webkitSpeechRecognition: SpeechRecognitionConstructor
   webkitAudioContext?: typeof AudioContext
 }
-
-interface BarcodeDetectedCode {
-  rawValue: string
-  format: string
-  boundingBox: DOMRectReadOnly
-}
-
-interface BarcodeDetector {
-  detect(
-    source: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement | ImageBitmap,
-  ): Promise<BarcodeDetectedCode[]>
-}
-
-interface BarcodeDetectorConstructor {
-  new (options?: { formats?: string[] }): BarcodeDetector
-}
-
-interface Window {
-  BarcodeDetector?: BarcodeDetectorConstructor
-}

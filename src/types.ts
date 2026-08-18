@@ -54,3 +54,18 @@ export interface SemanticSearchResult {
 export interface SemanticSearchResponse {
   results: SemanticSearchResult[]
 }
+
+export interface MovementIntent {
+  quantity: number
+  type: 'in' | 'out'
+  confidence: number
+}
+
+export interface ProductFields {
+  name?: string
+  brand?: string
+  category?: string
+  presentation?: string
+  unit?: string
+  confidence?: number
+}

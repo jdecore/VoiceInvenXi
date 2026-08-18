@@ -5,7 +5,7 @@ import { PageLayout, Header, Card, FAB, VoiceWave, SuccessAnimation, Skeleton, u
 import { StockValue, getStockColor } from '@/components/ui/StockValue'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
-import { productApi, movementApi } from '@/api'
+import { productApi, movementApi, agentApi } from '@/api'
 import { parseSpanishNumber } from '@/lib/numbers'
 import type { Product } from '@/types'
 
@@ -47,12 +47,24 @@ export function ProductPage() {
   const handleMovement = useCallback(async (text: string) => {
     if (!product) return
 
-    const digitsMatch = text.match(/\d+/)
-    const parsed = digitsMatch
-      ? parseInt(digitsMatch[0], 10)
-      : parseSpanishNumber(text)
+    let quantity: number | null = null
+    let type: 'in' | 'out' = movementType
 
-    if (!parsed || parsed <= 0) {
+    try {
+      const intent = await agentApi.parseMovement(text)
+      if (intent) {
+        quantity = intent.quantity
+        type = intent.type
+      }
+    } catch {
+      quantity = null
+    }
+
+    if (!quantity) {
+      quantity = parseSpanishNumber(text)
+    }
+
+    if (!quantity || quantity <= 0) {
       showToast('error', 'No se detectó una cantidad')
       return
     }
@@ -60,18 +72,18 @@ export function ProductPage() {
     try {
       await movementApi.create({
         productId: product.id,
-        quantity: parsed,
-        type: movementType,
+        quantity,
+        type,
       })
 
       setProduct((prev) => prev ? {
         ...prev,
-        stock: movementType === 'in' ? prev.stock + parsed : prev.stock - parsed,
+        stock: type === 'in' ? prev.stock + quantity : prev.stock - quantity,
       } : null)
 
       setShowSuccess(true)
       setTimeout(() => {
-        speak(`${movementType === 'in' ? 'Entrada' : 'Salida'} de ${parsed} unidades registrada`)
+        speak(`${type === 'in' ? 'Entrada' : 'Salida'} de ${quantity} unidades registrada`)
       }, 2500)
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : 'Error al registrar movimiento')

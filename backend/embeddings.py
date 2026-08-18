@@ -63,7 +63,7 @@ async def _embed_with_fallback(texts: list[str], cohere_input_type: str, jina_ta
     if COHERE_API_KEY:
         try:
             return await _cohere_embedding(texts, cohere_input_type)
-        except (httpx.HTTPStatusError, Exception) as e:
+        except Exception as e:
             logger.warning(f"Cohere fallback to Jina: {e}")
     if JINA_API_KEY:
         return await _jina_embedding(texts, jina_task)
