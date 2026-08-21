@@ -9,9 +9,10 @@ interface LogoProps {
 }
 
 export function Logo({ className = '', size }: LogoProps) {
-  const style = size ? { width: size, height: size } : undefined
-  // ViewBox 0 0 1024 1024 is square icon — we constrain by height to keep header compact
-  // The SVG paths already contain the mark; we let currentColor handle theming.
+  // viewBox recortado al bounding box real del logo (y 398-633) para eliminar ~75% de padding vertical
+  // Antes 0 0 1024 1024 dejaba 390px arriba y 390px abajo vacíos -> se veía diminuto.
+  // Ahora 0 385 1024 255 ocupa todo el alto disponible.
+  const style = size ? { height: size, width: 'auto' } : undefined
   return (
     <span
       className={`inline-flex items-center justify-center ${className}`}
@@ -20,11 +21,12 @@ export function Logo({ className = '', size }: LogoProps) {
       role="img"
     >
       <svg
-        viewBox="0 0 1024 1024"
+        viewBox="0 385 1024 255"
         xmlns="http://www.w3.org/2000/svg"
         className="h-full w-auto"
-        style={{ display: 'block', color: 'currentColor' }}
+        style={{ display: 'block', color: 'currentColor', width: 'auto', height: '100%' }}
         aria-hidden="true"
+        preserveAspectRatio="xMidYMid meet"
       >
         {/* Paths use currentColor so parent can control via text color */}
         <path
