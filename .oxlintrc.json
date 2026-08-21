@@ -1,3 +1,3 @@
 {
-  "ignorePatterns": ["src/lib/zxing/"]
+  "ignorePatterns": []
 }

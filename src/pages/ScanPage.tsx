@@ -1,41 +1,22 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { ScanLine } from 'lucide-react'
-import * as ZXing from '@/lib/zxing/zxing-js.umd'
-import { PageLayout, FAB, EmptyState } from '@/components/ui'
+import Quagga, {
+  type QuaggaJSCodeReader,
+  type QuaggaJSConfigObject,
+  type QuaggaJSResultObject,
+} from '@ericblade/quagga2'
+import { PageLayout, FAB, EmptyState, useToast } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
 import { generateRandomBarcode } from '@/lib/barcode'
 import { playScanBeep } from '@/lib/beep'
 import { hapticSuccess } from '@/lib/haptics'
 
-const SCAN_MAX_DIMENSION = 600
-const SCAN_INTERVAL_MS = 125 // ~fps 8
+const MAX_BARCODE_LENGTH = 128
+const INVALID_BARCODE_TOAST_COOLDOWN_MS = 1500
 
-const SCAN_FORMATS = [
-  ZXing.BarcodeFormat.QR_CODE,
-  ZXing.BarcodeFormat.EAN_13,
-  ZXing.BarcodeFormat.EAN_8,
-  ZXing.BarcodeFormat.UPC_A,
-  ZXing.BarcodeFormat.UPC_E,
-  ZXing.BarcodeFormat.CODE_128,
-  ZXing.BarcodeFormat.CODE_39,
-]
-
-// Solo los formatos soportados (limita lectores -> más rápido) + TRY_HARDER
-// para leer códigos pequeños o con poca resolución
-const decodeHints = new Map<ZXing.DecodeHintType, unknown>([
-  [ZXing.DecodeHintType.POSSIBLE_FORMATS, SCAN_FORMATS],
-  [ZXing.DecodeHintType.TRY_HARDER, true],
-])
-
-function decodeCanvas(reader: ZXing.MultiFormatReader, canvas: HTMLCanvasElement): string {
-  const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas)
-  const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source))
-  return reader.decodeWithState(bitmap).text
-}
-
-const CAMERA_CONSTRAINTS: Array<MediaTrackConstraints> = [
+const CAMERA_CONSTRAINTS: MediaTrackConstraints[] = [
   {
     facingMode: { ideal: 'environment' },
     width: { ideal: 1920, max: 1920 },
@@ -51,159 +32,188 @@ const CAMERA_CONSTRAINTS: Array<MediaTrackConstraints> = [
   },
 ]
 
+const QUAGGA_READERS: QuaggaJSCodeReader[] = [
+  'code_128_reader',
+  'ean_reader',
+  'ean_8_reader',
+  'upc_reader',
+  'code_39_reader',
+]
+
+function getScannerConfig(target: HTMLElement): QuaggaJSConfigObject {
+  const workers = typeof navigator !== 'undefined'
+    ? Math.max(1, Math.min(2, Math.floor((navigator.hardwareConcurrency ?? 4) / 2)))
+    : 1
+
+  return {
+    inputStream: {
+      type: 'LiveStream',
+      target,
+      willReadFrequently: true,
+      constraints: {
+        ...CAMERA_CONSTRAINTS[0],
+      },
+      area: {
+        top: '18%',
+        right: '10%',
+        left: '10%',
+        bottom: '18%',
+      },
+    },
+    locator: {
+      halfSample: true,
+      patchSize: 'medium',
+    },
+    numOfWorkers: workers,
+    frequency: 8,
+    locate: true,
+    canvas: {
+      createOverlay: false,
+    },
+    decoder: {
+      readers: QUAGGA_READERS,
+      multiple: false,
+    },
+  }
+}
+
 export function ScanPage() {
   const navigate = useNavigate()
   const { speak } = useTTS()
+  const { showToast } = useToast()
   const [isScanning, setIsScanning] = useState(false)
   const [cameraError, setCameraError] = useState(false)
 
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const decodeTimerRef = useRef<number | null>(null)
+  const scannerHostRef = useRef<HTMLDivElement | null>(null)
+  const quaggaRunningRef = useRef(false)
+  const detectionLockRef = useRef(false)
+  const hasAnnouncedRef = useRef(false)
+  const lastInvalidToastAtRef = useRef(0)
   const resetTimerRef = useRef<number | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const readerRef = useRef<ZXing.MultiFormatReader | null>(null)
-  const decodingRef = useRef(false)
-  const isScanningRef = useRef(isScanning)
-  const handleScanRef = useRef<(barcode: string) => void>(() => {})
+  const activeDetectedRef = useRef<(data: QuaggaJSResultObject) => void>(() => {})
 
-  useEffect(() => {
-    isScanningRef.current = isScanning
-  }, [isScanning])
+  const stopScanner = useCallback(async () => {
+    try {
+      Quagga.offDetected(activeDetectedRef.current)
+    } catch {
+      // Quagga puede no tener listeners registrados todavía.
+    }
 
-  const getCanvas = useCallback(() => {
-    if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
-    return canvasRef.current
+    if (!quaggaRunningRef.current) return
+
+    quaggaRunningRef.current = false
+    try {
+      await Quagga.stop()
+    } catch {
+      // Si la cámara ya se cerró, no necesitamos hacer nada.
+    }
   }, [])
 
-  // Decodifica el sub-rectángulo visible del video (object-fit: cover) sin
-  // distorsión: el sampler dibuja los píxeles del recorte real, no el frame
-  // completo estirado — lo que ves en pantalla es exactamente lo que decodifica.
-  const scanFrame = useCallback(() => {
-    const video = videoRef.current
-    if (!video || isScanningRef.current || decodingRef.current) return
-    if (video.readyState < 2 || video.videoWidth === 0) return
-    const boxW = video.clientWidth
-    const boxH = video.clientHeight
-    if (boxW === 0 || boxH === 0) return
-
-    decodingRef.current = true
-    try {
-      const vW = video.videoWidth
-      const vH = video.videoHeight
-      const scale = Math.max(boxW / vW, boxH / vH)
-      const drawnW = vW * scale
-      const drawnH = vH * scale
-      const sx = (drawnW - boxW) / 2 / scale
-      const sy = (drawnH - boxH) / 2 / scale
-      const sw = Math.min(boxW / scale, vW - sx)
-      const sh = Math.min(boxH / scale, vH - sy)
-
-      const canvas = getCanvas()
-      // Cap al lado largo (aspect-preserving) — sin esto el canvas llegaba a
-      // 615x1080px y ZXing+TRY_HARDER (síncrono, main thread) bloqueaba la
-      // animación y dejaba el escaneo en ~2fps
-      const downscale = Math.min(1, SCAN_MAX_DIMENSION / Math.max(sw, sh))
-      const dw = sw * downscale
-      const dh = sh * downscale
-      if (canvas.width !== Math.round(dw) || canvas.height !== Math.round(dh)) {
-        canvas.width = Math.round(dw)
-        canvas.height = Math.round(dh)
-      }
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })
-      if (!ctx) return
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh)
-
-      const reader = readerRef.current ?? (readerRef.current = new ZXing.MultiFormatReader(false, decodeHints))
-      const text = decodeCanvas(reader, canvas)
-      if (!isScanningRef.current) handleScanRef.current(text)
-    } catch {
-      // Sin código en este frame — continuar escaneando
-    } finally {
-      decodingRef.current = false
-    }
-  }, [getCanvas])
-
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    let cancelled = false
-
-    const startCamera = async () => {
-      // Intenta resoluciones en orden descendente: algunas cámaras no
-      // soportan 1920x1080 y rechazan la petición con OverconstrainedError
-      for (const constraints of CAMERA_CONSTRAINTS) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: constraints,
-          })
-          if (cancelled) {
-            stream.getTracks().forEach((track) => track.stop())
-            return
-          }
-          streamRef.current = stream
-          video.srcObject = stream
-          void video.play().catch(() => {})
-          return
-        } catch {
-          // Seguir con la siguiente configuración
-        }
-      }
-      if (!cancelled) setCameraError(true)
-    }
-
-    const onPlaying = () => {
-      speak('Apunta la cámara al código de barras')
-      if (decodeTimerRef.current == null) {
-        decodeTimerRef.current = window.setInterval(() => {
-          scanFrame()
-        }, SCAN_INTERVAL_MS)
-      }
-    }
-
-    video.addEventListener('playing', onPlaying)
-    void startCamera()
-
-    return () => {
-      cancelled = true
-      video.removeEventListener('playing', onPlaying)
-      if (decodeTimerRef.current != null) {
-        window.clearInterval(decodeTimerRef.current)
-        decodeTimerRef.current = null
-      }
-      streamRef.current?.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
-      video.srcObject = null
-      readerRef.current = null
-    }
-  }, [speak, scanFrame])
-
   const handleScan = useCallback(async (barcode: string) => {
-    if (isScanningRef.current) return
-    isScanningRef.current = true
+    if (detectionLockRef.current) return
+
+    const normalizedBarcode = barcode.trim()
+    if (!normalizedBarcode || normalizedBarcode.length > MAX_BARCODE_LENGTH) {
+      const now = Date.now()
+      if (now - lastInvalidToastAtRef.current > INVALID_BARCODE_TOAST_COOLDOWN_MS) {
+        showToast('error', 'Código de barras inválido o demasiado largo')
+        lastInvalidToastAtRef.current = now
+      }
+      return
+    }
+
+    detectionLockRef.current = true
     setIsScanning(true)
     playScanBeep()
     hapticSuccess()
-    streamRef.current?.getTracks().forEach((track) => track.stop())
+    void stopScanner()
 
     try {
-      const product = await productApi.getByBarcode(barcode)
+      const product = await productApi.getByBarcode(normalizedBarcode)
       navigate(`/product/${encodeURIComponent(product.barcode)}`)
     } catch {
-      navigate(`/new/${encodeURIComponent(barcode)}`)
+      navigate(`/new/${encodeURIComponent(normalizedBarcode)}`)
     } finally {
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current)
         resetTimerRef.current = null
       }
       resetTimerRef.current = window.setTimeout(() => {
-        isScanningRef.current = false
+        detectionLockRef.current = false
         setIsScanning(false)
         resetTimerRef.current = null
       }, 3000)
     }
-  }, [navigate])
+  }, [navigate, showToast, stopScanner])
+
+  const handleDetected = useCallback((result: QuaggaJSResultObject) => {
+    const code = result.codeResult?.code?.trim()
+    if (!code || detectionLockRef.current) return
+    void handleScan(code)
+  }, [handleScan])
+
+  useEffect(() => {
+    const target = scannerHostRef.current
+    if (!target) return
+
+    let cancelled = false
+    const baseConfig = getScannerConfig(target)
+
+    const startScanner = async () => {
+      for (const constraints of CAMERA_CONSTRAINTS) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            Quagga.init({
+              ...baseConfig,
+              inputStream: {
+                ...baseConfig.inputStream,
+                constraints,
+              },
+            }, (error) => {
+              if (cancelled) {
+                reject(new Error('cancelled'))
+                return
+              }
+              if (error) {
+                reject(error)
+                return
+              }
+              resolve()
+            })
+          })
+
+          if (cancelled) {
+            void stopScanner()
+            return
+          }
+
+          activeDetectedRef.current = handleDetected
+          Quagga.onDetected(handleDetected)
+          quaggaRunningRef.current = true
+          setCameraError(false)
+          if (!hasAnnouncedRef.current) {
+            hasAnnouncedRef.current = true
+            speak('Apunta la cámara al código de barras')
+          }
+          Quagga.start()
+          return
+        } catch {
+          await stopScanner()
+          // Probar la siguiente resolución.
+        }
+      }
+
+      if (!cancelled) setCameraError(true)
+    }
+
+    void startScanner()
+
+    return () => {
+      cancelled = true
+      hasAnnouncedRef.current = false
+      void stopScanner()
+    }
+  }, [handleDetected, speak, stopScanner])
 
   useEffect(() => {
     return () => {
@@ -214,12 +224,8 @@ export function ScanPage() {
     }
   }, [])
 
-  useEffect(() => {
-    handleScanRef.current = handleScan
-  }, [handleScan])
-
   const handleSimulateScan = () => {
-    handleScan(generateRandomBarcode())
+    void handleScan(generateRandomBarcode())
   }
 
   const handleMic = () => {
@@ -233,15 +239,8 @@ export function ScanPage() {
       scroll={false}
       className="!bg-surface-2"
     >
-      {/* Camera feed — pantalla completa en portrait y landscape (object-fit: cover) */}
       <div className="relative flex-1 overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="h-full w-full object-cover"
-        />
+        <div ref={scannerHostRef} className="absolute inset-0" />
 
         {cameraError && (
           <div className="absolute inset-0 flex items-center justify-center bg-surface-2">
@@ -253,22 +252,17 @@ export function ScanPage() {
           </div>
         )}
 
-        {/* Scan viewfinder overlay */}
         <div className="absolute inset-0 pointer-events-none">
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
             w-[min(70vw,280px,45dvh)] h-[min(70vw,280px,45dvh)]
             transition-all duration-200
             ${isScanning ? 'ring-2 ring-brand/70 rounded-2xl' : ''}
           `}>
-            {/* Corner brackets */}
             <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-brand rounded-tl-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
             <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-brand rounded-tr-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
             <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-brand rounded-bl-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-brand rounded-br-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
 
-            {/* Scanning line — el wrapper da el 100% de altura para el
-                translateY (composited); animar top bloqueaba el main thread
-                y se veía muy lenta durante el decode */}
             <div className="absolute left-3 right-3 top-0 bottom-0 overflow-hidden">
               <div className="h-[2px] rounded-full
                 bg-gradient-to-r from-transparent via-brand to-transparent
@@ -278,7 +272,6 @@ export function ScanPage() {
             </div>
           </div>
 
-          {/* Hint text */}
           <div className="absolute bottom-[calc(10%+7rem)] left-0 right-0 flex justify-center">
             <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm text-center">
               <p className="text-white text-sm font-medium whitespace-nowrap">
@@ -288,7 +281,6 @@ export function ScanPage() {
           </div>
         </div>
 
-        {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-10 px-4 py-4">
           <h1 className="text-center text-white text-lg font-bold drop-shadow-md">
             VoiceInvenXi
