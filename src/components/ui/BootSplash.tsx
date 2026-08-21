@@ -39,7 +39,7 @@ export function BootSplash({ onReady }: BootSplashProps) {
 
   return (
     <div className="boot-splash" role="status" aria-live="polite">
-      <div className="boot-logo">VoiceInvenXi</div>
+      <div className="boot-logo">StockXi</div>
       <div className="boot-spinner" />
       <p className="boot-sub">
         {slow ? 'El servidor se está iniciando, espera un momento…' : 'Despertando el servidor…'}

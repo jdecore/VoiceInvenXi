@@ -1,7 +1,7 @@
 {
-  "name": "VoiceInvenXi",
-  "short_name": "VoiceInvenXi",
-  "description": "Inventario por voz para bodegas",
+  "name": "StockXi",
+  "short_name": "StockXi",
+  "description": "Control de stock para bodegas — escanea, gestiona y sincroniza",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",

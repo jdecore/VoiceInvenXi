@@ -189,7 +189,7 @@ export function ScanPage() {
         </div>
 
         <div className="scan-topbar">
-          <h1 className="scan-title">VoiceInvenXi</h1>
+          <h1 className="scan-title">StockXi</h1>
           {import.meta.env.DEV && (
             <button onClick={handleSimulateScan} className="dev-button">
               Activo
