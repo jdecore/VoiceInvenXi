@@ -20,6 +20,7 @@ export function ScanPage() {
   const handleScanRef = useRef<(barcode: string) => void>(() => {})
 
   useEffect(() => {
+    let cancelled = false
     const scanner = new Html5Qrcode('scan-region', false)
     scannerRef.current = scanner
 
@@ -32,10 +33,16 @@ export function ScanPage() {
         },
         () => {},
       )
-      .then(() => speak('Apunta la cámara al código de barras'))
-      .catch(() => setCameraError(true))
+      .then(() => {
+        if (!cancelled) speak('Apunta la cámara al código de barras')
+      })
+      .catch(() => {
+        // Ignore rejections caused by StrictMode's immediate unmount in dev.
+        if (!cancelled) setCameraError(true)
+      })
 
     return () => {
+      cancelled = true
       const s = scannerRef.current
       scannerRef.current = null
       isProcessingRef.current = false
@@ -105,7 +112,7 @@ export function ScanPage() {
         <div id="scan-region" />
 
         {cameraError && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-surface-2">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-2">
             <EmptyState
               icon={<ScanLine />}
               title="Cámara no disponible"
