@@ -27,7 +27,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[str] = mapped_column(_id_type, primary_key=True, default=generate_uuid)
-    barcode: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    barcode: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     brand: Mapped[str | None] = mapped_column(String(255), nullable=True)
     category: Mapped[str | None] = mapped_column(String(255), nullable=True)

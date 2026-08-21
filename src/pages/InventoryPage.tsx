@@ -49,7 +49,7 @@ export function InventoryPage() {
             <Card
               key={product.id}
               interactive
-              onClick={() => navigate(`/product/${product.barcode}`)}
+              onClick={() => navigate(`/product/${encodeURIComponent(product.barcode)}`)}
             >
               <ProductRow
                 name={product.name}

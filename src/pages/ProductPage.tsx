@@ -38,7 +38,7 @@ export function ProductPage() {
       setProduct(data)
       speak(`${data.name}, ${data.stock} unidades en stock`)
     } catch {
-      navigate(`/new/${barcode}`, { replace: true })
+      navigate(`/new/${encodeURIComponent(barcode)}`, { replace: true })
     } finally {
       setIsLoading(false)
     }

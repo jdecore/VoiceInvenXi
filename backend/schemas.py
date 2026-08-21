@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class ProductCreate(BaseModel):
-    barcode: str = Field(..., max_length=20)
+    barcode: str = Field(..., max_length=128)
     name: str = Field(..., max_length=255)
     brand: str | None = None
     category: str | None = None

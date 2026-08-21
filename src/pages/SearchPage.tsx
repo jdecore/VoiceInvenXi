@@ -82,7 +82,7 @@ export function SearchPage() {
   }
 
   const handleResultClick = (result: SemanticSearchResult) => {
-    navigate(`/product/${result.barcode}`)
+    navigate(`/product/${encodeURIComponent(result.barcode)}`)
   }
 
   return (

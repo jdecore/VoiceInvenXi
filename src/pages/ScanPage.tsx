@@ -29,19 +29,27 @@ const decodeHints = new Map<ZXing.DecodeHintType, unknown>([
   [ZXing.DecodeHintType.TRY_HARDER, true],
 ])
 
-function decodeCanvas(canvas: HTMLCanvasElement): Promise<string> {
-  return new Promise((resolve, reject) => {
-    try {
-      const reader = new ZXing.MultiFormatReader(false, decodeHints)
-      const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas)
-      const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source))
-      const result = reader.decode(bitmap)
-      resolve(result.text)
-    } catch (error) {
-      reject(error)
-    }
-  })
+function decodeCanvas(reader: ZXing.MultiFormatReader, canvas: HTMLCanvasElement): string {
+  const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas)
+  const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source))
+  return reader.decodeWithState(bitmap).text
 }
+
+const CAMERA_CONSTRAINTS: Array<MediaTrackConstraints> = [
+  {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920, max: 1920 },
+    height: { ideal: 1080, max: 1080 },
+  },
+  {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1280, max: 1280 },
+    height: { ideal: 720, max: 720 },
+  },
+  {
+    facingMode: { ideal: 'environment' },
+  },
+]
 
 export function ScanPage() {
   const navigate = useNavigate()
@@ -52,7 +60,9 @@ export function ScanPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const decodeTimerRef = useRef<number | null>(null)
+  const resetTimerRef = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const readerRef = useRef<ZXing.MultiFormatReader | null>(null)
   const decodingRef = useRef(false)
   const isScanningRef = useRef(isScanning)
   const handleScanRef = useRef<(barcode: string) => void>(() => {})
@@ -69,7 +79,7 @@ export function ScanPage() {
   // Decodifica el sub-rectángulo visible del video (object-fit: cover) sin
   // distorsión: el sampler dibuja los píxeles del recorte real, no el frame
   // completo estirado — lo que ves en pantalla es exactamente lo que decodifica.
-  const scanFrame = useCallback(async () => {
+  const scanFrame = useCallback(() => {
     const video = videoRef.current
     if (!video || isScanningRef.current || decodingRef.current) return
     if (video.readyState < 2 || video.videoWidth === 0) return
@@ -104,8 +114,9 @@ export function ScanPage() {
       if (!ctx) return
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh)
 
-      const result = await decodeCanvas(canvas)
-      if (!isScanningRef.current) handleScanRef.current(result)
+      const reader = readerRef.current ?? (readerRef.current = new ZXing.MultiFormatReader(false, decodeHints))
+      const text = decodeCanvas(reader, canvas)
+      if (!isScanningRef.current) handleScanRef.current(text)
     } catch {
       // Sin código en este frame — continuar escaneando
     } finally {
@@ -119,36 +130,34 @@ export function ScanPage() {
     let cancelled = false
 
     const startCamera = async () => {
-      try {
-        // Resolución máxima (1920x1080) — lo que ve el usuario es el recorte
-        // cover del centro del frame nativo, a resolución completa
-        // (sin aspectRatio ideal: forzaba a la cámara a resoluciones raras y
-        // bajas, se veía borroso y no decodificaba)
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920, max: 1920 },
-            height: { ideal: 1080, max: 1080 },
-          },
-        })
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop())
+      // Intenta resoluciones en orden descendente: algunas cámaras no
+      // soportan 1920x1080 y rechazan la petición con OverconstrainedError
+      for (const constraints of CAMERA_CONSTRAINTS) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: constraints,
+          })
+          if (cancelled) {
+            stream.getTracks().forEach((track) => track.stop())
+            return
+          }
+          streamRef.current = stream
+          video.srcObject = stream
+          void video.play().catch(() => {})
           return
+        } catch {
+          // Seguir con la siguiente configuración
         }
-        streamRef.current = stream
-        video.srcObject = stream
-        void video.play().catch(() => {})
-      } catch {
-        if (!cancelled) setCameraError(true)
       }
+      if (!cancelled) setCameraError(true)
     }
 
     const onPlaying = () => {
       speak('Apunta la cámara al código de barras')
       if (decodeTimerRef.current == null) {
         decodeTimerRef.current = window.setInterval(() => {
-          void scanFrame()
+          scanFrame()
         }, SCAN_INTERVAL_MS)
       }
     }
@@ -166,6 +175,7 @@ export function ScanPage() {
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
       video.srcObject = null
+      readerRef.current = null
     }
   }, [speak, scanFrame])
 
@@ -179,16 +189,30 @@ export function ScanPage() {
 
     try {
       const product = await productApi.getByBarcode(barcode)
-      navigate(`/product/${product.barcode}`)
+      navigate(`/product/${encodeURIComponent(product.barcode)}`)
     } catch {
-      navigate(`/new/${barcode}`)
+      navigate(`/new/${encodeURIComponent(barcode)}`)
     } finally {
-      setTimeout(() => {
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current)
+        resetTimerRef.current = null
+      }
+      resetTimerRef.current = window.setTimeout(() => {
         isScanningRef.current = false
         setIsScanning(false)
+        resetTimerRef.current = null
       }, 3000)
     }
   }, [navigate])
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current)
+        resetTimerRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     handleScanRef.current = handleScan
