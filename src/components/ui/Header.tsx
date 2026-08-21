@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowLeft } from 'lucide-react'
+import { IconArrowLeft } from '@tabler/icons-react'
 
 interface HeaderProps {
   title: string
@@ -16,7 +16,7 @@ export function Header({ title, subtitle, showBack = true, action }: HeaderProps
     <div className="header">
       {showBack && (
         <button onClick={() => navigate(-1)} className="header-back" aria-label="Volver">
-          <ArrowLeft />
+          <IconArrowLeft />
         </button>
       )}
       <div className="header-title-wrap">

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { Package } from 'lucide-react'
+import { IconPackage } from '@tabler/icons-react'
 
 interface EmptyStateProps {
   icon?: ReactNode
@@ -15,7 +15,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
         <div className="empty-state-icon">{icon}</div>
       ) : (
         <div className="empty-state-icon">
-          <Package />
+          <IconPackage />
         </div>
       )}
       <h3 className="empty-state-title">{title}</h3>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
+import { IconCircleCheck, IconAlertCircle, IconInfoCircle, IconX } from '@tabler/icons-react'
 
 type ToastVariant = 'success' | 'error' | 'info'
 
@@ -67,9 +67,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 const icons = {
-  success: <CheckCircle />,
-  error: <AlertCircle />,
-  info: <Info />,
+  success: <IconCircleCheck />,
+  error: <IconAlertCircle />,
+  info: <IconInfoCircle />,
 }
 
 export function ToastHost() {
@@ -84,7 +84,7 @@ export function ToastHost() {
             {icons[toast.variant]}
             <p className="toast-msg">{toast.message}</p>
             <button onClick={() => dismissToast(toast.id)} className="toast-close" aria-label="Cerrar">
-              <X />
+              <IconX />
             </button>
           </div>
         ))}

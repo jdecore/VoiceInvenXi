@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import { IconPackage } from '@tabler/icons-react'
 import { StockBadge } from './StockBadge'
 
 interface ProductRowProps {
@@ -12,7 +12,7 @@ export function ProductRow({ name, meta, stock, unit }: ProductRowProps) {
   return (
     <div className="product-row">
       <div className="product-row-tile">
-        <Package />
+        <IconPackage />
       </div>
       <div className="product-row-body">
         <p className="product-row-name">{name}</p>

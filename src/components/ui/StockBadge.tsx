@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import { IconPackage } from '@tabler/icons-react'
 import { StockValue } from './StockValue'
 
 interface StockBadgeProps {
@@ -18,7 +18,7 @@ export function StockBadge({ stock, unit = 'Unidad', size = 'md' }: StockBadgePr
 
   return (
     <span className={classes}>
-      <Package />
+      <IconPackage />
       <StockValue stock={stock} unit={unit} />
     </span>
   )

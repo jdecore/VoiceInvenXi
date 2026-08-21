@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { ScanLine } from 'lucide-react'
+import { IconScan } from '@tabler/icons-react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { PageLayout, FAB, EmptyState } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
@@ -166,7 +166,7 @@ export function ScanPage() {
         {cameraError && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-2">
             <EmptyState
-              icon={<ScanLine />}
+              icon={<IconScan />}
               title="Cámara no disponible"
               description="Verifica los permisos de la cámara en tu navegador"
             />

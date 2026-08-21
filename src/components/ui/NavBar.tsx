@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router'
-import { ScanLine, Package, Activity, User } from 'lucide-react'
+import { IconScan, IconPackage, IconActivity, IconUser } from '@tabler/icons-react'
 import { hapticTap } from '@/lib/haptics'
 
 interface NavItem {
@@ -9,10 +9,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: <ScanLine />, path: '/', label: 'Escanear' },
-  { icon: <Package />, path: '/inventory', label: 'Inventario' },
-  { icon: <Activity />, path: '/activity', label: 'Actividad' },
-  { icon: <User />, path: '/profile', label: 'Perfil' },
+  { icon: <IconScan />, path: '/', label: 'Escanear' },
+  { icon: <IconPackage />, path: '/inventory', label: 'Inventario' },
+  { icon: <IconActivity />, path: '/activity', label: 'Actividad' },
+  { icon: <IconUser />, path: '/profile', label: 'Perfil' },
 ]
 
 export function NavBar() {

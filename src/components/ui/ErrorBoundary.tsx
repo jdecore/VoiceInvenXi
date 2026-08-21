@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { IconAlertTriangle } from '@tabler/icons-react'
 import { Button } from './Button'
 
 interface Props {
@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="error-screen">
           <div className="error-icon">
-            <AlertTriangle />
+            <IconAlertTriangle />
           </div>
           <h2 className="error-title">Algo salió mal</h2>
           <p className="error-msg">{message}</p>

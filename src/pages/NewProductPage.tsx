@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Check } from 'lucide-react'
+import { IconCheck } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, Input, Button, FAB, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
@@ -231,7 +231,7 @@ export function NewProductPage() {
         >
           {currentStep === STEPS.length - 1 ? (
             <>
-              <Check />
+              <IconCheck />
               {isSaving ? 'Guardando...' : 'Guardar'}
             </>
           ) : (

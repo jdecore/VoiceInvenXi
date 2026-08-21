@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { Search, Sparkles } from 'lucide-react'
+import { IconSearch, IconSparkles } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, Input, FAB, VoiceWave, Skeleton, EmptyState, ProductRow, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
+import { useTTS } from '@/hooks/useTTS'
 import { searchApi } from '@/api'
 import type { SemanticSearchResult } from '@/types'
 
@@ -14,6 +15,8 @@ export function SearchPage() {
   const [searchParams] = useSearchParams()
   const { showToast } = useToast()
   const { isListening, transcript, interimTranscript, start, stop, isSupported, error } = useSTT()
+  const { speak } = useTTS()
+  const navigatedRef = useRef(false)
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SemanticSearchResult[]>([])
@@ -32,13 +35,14 @@ export function SearchPage() {
   useEffect(() => {
     if (transcript) {
       setQuery(transcript)
-      performSearch(transcript)
+      performSearch(transcript, true)
     }
   }, [transcript])
 
-  const performSearch = async (searchQuery: string) => {
+  const performSearch = async (searchQuery: string, viaVoice = false) => {
     if (!searchQuery.trim()) return
 
+    navigatedRef.current = false
     setIsLoading(true)
     setHasSearched(true)
     setHasError(false)
@@ -46,6 +50,19 @@ export function SearchPage() {
     try {
       const response = await searchApi.semanticSearch(searchQuery)
       setResults(response.results)
+
+      // Voice searches continue straight to the best match: read it aloud and
+      // open its detail so the operator can act hands-free.
+      if (viaVoice && response.results.length > 0) {
+        const best = response.results[0]
+        speak(`Mejor coincidencia: ${best.name}, ${best.stock} ${best.unit || 'unidades'}`)
+        if (!navigatedRef.current) {
+          navigatedRef.current = true
+          window.setTimeout(() => {
+            navigate(`/product/${encodeURIComponent(best.barcode)}`)
+          }, 2600)
+        }
+      }
     } catch {
       setHasError(true)
       showToast('error', 'Error al buscar productos')
@@ -98,7 +115,7 @@ export function SearchPage() {
         <Input
           label="Buscar producto"
           placeholder="Escribe o usa el micrófono..."
-          icon={<Search />}
+          icon={<IconSearch />}
           value={query}
           onChange={(e) => handleTextChange(e.target.value)}
         />
@@ -122,7 +139,7 @@ export function SearchPage() {
       {!hasSearched && !isLoading && (
         <div className="mt-5">
           <div className="flex items-center gap-1-5 text-on-surface-muted text-xs font-medium uppercase tracking-wide">
-            <Sparkles />
+            <IconSparkles />
             Sugerencias
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -143,23 +160,35 @@ export function SearchPage() {
         </div>
       ) : hasError ? null : hasSearched && results.length === 0 ? (
         <EmptyState
-          icon={<Search />}
+          icon={<IconSearch />}
           title={query ? `No encontramos "${query}"` : 'Sin resultados'}
           description="Prueba con otras palabras o usa el micrófono para buscar por voz"
         />
       ) : (
-        <div ref={listRef} className="mt-5 space-y-3">
-          {results.map((result) => (
-            <Card key={result.id} interactive onClick={() => handleResultClick(result)}>
-              <ProductRow
-                name={result.name}
-                meta={`${result.brand} ${result.category && `• ${result.category}`}`}
-                stock={result.stock}
-                unit={result.unit}
-              />
-            </Card>
-          ))}
-        </div>
+        <>
+          {results.length > 0 && (
+            <p className="mt-5 mb-2 text-xs font-medium uppercase tracking-wide text-brand">
+              Mejor coincidencia
+            </p>
+          )}
+          <div ref={listRef} className="mt-1 space-y-3">
+            {results.map((result) => (
+              <Card
+                key={result.id}
+                interactive
+                onClick={() => handleResultClick(result)}
+                className={result === results[0] ? 'result-best' : ''}
+              >
+                <ProductRow
+                  name={result.name}
+                  meta={`${result.brand} ${result.category && `• ${result.category}`}`}
+                  stock={result.stock}
+                  unit={result.unit}
+                />
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </PageLayout>
   )

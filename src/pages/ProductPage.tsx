@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Plus, Minus, Volume2, Package } from 'lucide-react'
+import { IconPlus, IconMinus, IconVolume2, IconPackage } from '@tabler/icons-react'
 import { PageLayout, Header, Card, FAB, VoiceWave, SuccessAnimation, Skeleton, useToast } from '@/components/ui'
 import { StockValue, getStockColor } from '@/components/ui/StockValue'
 import { useSTT } from '@/hooks/useSTT'
@@ -130,7 +130,7 @@ export function ProductPage() {
 
       <div className="px-4 space-y-4 pb-32">
         <div className="product-image-placeholder">
-          <Package />
+          <IconPackage />
           <p>Sin imagen</p>
         </div>
 
@@ -151,7 +151,7 @@ export function ProductPage() {
                   className={getStockColor(product.stock)}
                 />
                 <button onClick={handleReplayStock} aria-label="Escuchar stock" className="replay-btn">
-                  <Volume2 />
+                  <IconVolume2 />
                 </button>
               </div>
             </div>
@@ -174,14 +174,14 @@ export function ProductPage() {
               onClick={() => setMovementType('in')}
               className={`movement-toggle ${movementType === 'in' ? 'movement-toggle--in' : ''}`}
             >
-              <Plus />
+              <IconPlus />
               Entrada
             </button>
             <button
               onClick={() => setMovementType('out')}
               className={`movement-toggle ${movementType === 'out' ? 'movement-toggle--out' : ''}`}
             >
-              <Minus />
+              <IconMinus />
               Salida
             </button>
           </div>

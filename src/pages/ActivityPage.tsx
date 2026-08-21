@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowUpCircle, ArrowDownCircle, Activity } from 'lucide-react'
+import { IconArrowUpCircle, IconArrowDownCircle, IconActivity } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, EmptyState, Skeleton } from '@/components/ui'
 import { movementApi } from '@/api'
@@ -57,7 +57,7 @@ export function ActivityPage() {
         </div>
       ) : movements.length === 0 ? (
         <EmptyState
-          icon={<Activity />}
+          icon={<IconActivity />}
           title="Sin actividad"
           description="Los movimientos de stock aparecerán aquí"
         />
@@ -67,7 +67,7 @@ export function ActivityPage() {
             <Card key={movement.id}>
               <div className="flex items-center gap-3">
                 <div className={`activity-icon ${movement.type === 'in' ? 'activity-icon--in' : 'activity-icon--out'}`}>
-                  {movement.type === 'in' ? <ArrowDownCircle /> : <ArrowUpCircle />}
+                  {movement.type === 'in' ? <IconArrowDownCircle /> : <IconArrowUpCircle />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="activity-name">{movement.productName}</p>

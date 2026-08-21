@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, LogOut, RefreshCw } from 'lucide-react'
+import { IconUser, IconLogout, IconRefresh } from '@tabler/icons-react'
 import { PageLayout, Header, Card, Button, useToast } from '@/components/ui'
 import { searchApi } from '@/api'
 
@@ -28,7 +28,7 @@ export function ProfilePage() {
     <PageLayout nav header={<Header title="Perfil" showBack={false} />} contentClassName="px-4 content-nav-safe">
       <div className="profile-header">
         <div className="profile-avatar">
-          <User />
+          <IconUser />
         </div>
         <h2 className="profile-name">Operario</h2>
         <p className="profile-role">Administrador</p>
@@ -40,7 +40,7 @@ export function ProfilePage() {
           Regenera los vectores de los productos para mejorar la búsqueda por voz y texto.
         </p>
         <Button variant="tonal" className="w-full" onClick={handleReseed} disabled={isSeeding}>
-          <RefreshCw />
+          <IconRefresh />
           {isSeeding ? 'Regenerando...' : 'Regenerar embeddings'}
         </Button>
       </Card>
@@ -49,7 +49,7 @@ export function ProfilePage() {
         <Card interactive onClick={handleLogout}>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-error-container">
-              <LogOut />
+              <IconLogout />
             </div>
             <div className="flex-1">
               <p className="text-error font-medium">Cerrar sesión</p>

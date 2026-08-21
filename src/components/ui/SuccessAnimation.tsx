@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { IconCheck } from '@tabler/icons-react'
 import { hapticSuccess } from '@/lib/haptics'
 import { useEffect } from 'react'
 
@@ -26,7 +26,7 @@ export function SuccessAnimation({
       <div className="success-check-wrap">
         <div className="success-ripple" />
         <div className="success-check">
-          <Check />
+          <IconCheck />
         </div>
       </div>
       <div className="success-msg">

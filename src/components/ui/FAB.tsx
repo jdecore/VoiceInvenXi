@@ -1,4 +1,4 @@
-import { Mic } from 'lucide-react'
+import { IconMicrophone } from '@tabler/icons-react'
 import { hapticTap } from '@/lib/haptics'
 
 interface FABProps {
@@ -30,7 +30,7 @@ export function FAB({
       className={classes}
       aria-label={ariaLabel}
     >
-      <Mic />
+      <IconMicrophone />
     </button>
   )
 }

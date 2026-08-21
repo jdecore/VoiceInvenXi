@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { Package } from 'lucide-react'
+import { IconPackage } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, ProductRow, EmptyState, Skeleton } from '@/components/ui'
 import { productApi } from '@/api'
@@ -41,7 +41,7 @@ export function InventoryPage() {
         </div>
       ) : products.length === 0 ? (
         <EmptyState
-          icon={<Package />}
+          icon={<IconPackage />}
           title="Sin productos"
           description="Escanea un código de barras para agregar productos"
         />
