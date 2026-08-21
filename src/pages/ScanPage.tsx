@@ -27,14 +27,27 @@ export function ScanPage() {
     scanner
       .start(
         { facingMode: 'environment' },
-        { fps: 8 },
+        { fps: 10 },
         (decodedText) => {
           if (!isProcessingRef.current) handleScanRef.current(decodedText)
         },
         () => {},
       )
       .then(() => {
-        if (!cancelled) speak('Apunta la cámara al código de barras')
+        if (cancelled) {
+          // StrictMode (dev) mounted us twice: the real cleanup ran before
+          // start() resolved, so this scanner finished starting on its own.
+          // Tear it down now or it becomes an orphaned second <video>.
+          try {
+            scanner.stop().catch(() => {}).finally(() => {
+              try { scanner.clear() } catch {}
+            })
+          } catch {
+            try { scanner.clear() } catch {}
+          }
+          return
+        }
+        speak('Apunta la cámara al código de barras')
       })
       .catch(() => {
         // Ignore rejections caused by StrictMode's immediate unmount in dev.
