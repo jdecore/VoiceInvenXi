@@ -26,7 +26,7 @@ export function ScanPage() {
     scanner
       .start(
         { facingMode: 'environment' },
-        { fps: 10, aspectRatio: 1.777 },
+        { fps: 8 },
         (decodedText) => {
           if (!isProcessingRef.current) handleScanRef.current(decodedText)
         },
@@ -39,26 +39,15 @@ export function ScanPage() {
       const s = scannerRef.current
       scannerRef.current = null
       isProcessingRef.current = false
-      if (s) {
-        void s
-          .stop()
-          .catch(() => {})
-          .finally(() => {
-            try {
-              s.clear()
-            } catch {}
-          })
-      } else {
-        // fallback for StrictMode second mount before first start finished
-        void scanner
-          .stop()
-          .catch(() => {})
-          .finally(() => {
-            try {
-              scanner.clear()
-            } catch {}
-          })
-      }
+      const toStop = s ?? scanner
+      void toStop
+        .stop()
+        .catch(() => {})
+        .finally(() => {
+          try {
+            toStop.clear()
+          } catch {}
+        })
     }
   }, [speak])
 
@@ -73,7 +62,6 @@ export function ScanPage() {
       playScanBeep()
       hapticSuccess()
 
-      // Detener cámara de inmediato y esperar a que frene el loop interno de html5-qrcode
       const scanner = scannerRef.current
       if (scanner) {
         try {
@@ -91,8 +79,7 @@ export function ScanPage() {
       } catch {
         navigate(`/new/${encodeURIComponent(barcode)}`)
       }
-      // No reset de isScanning/isProcessing: la página se desmonta al navegar.
-      // Si la navegación falla, permitir reintento tras 2s
+      // Si la navegación no desmonta (ej. error), liberar lock tras 2.5s
       setTimeout(() => {
         isProcessingRef.current = false
         setIsScanning(false)
@@ -116,11 +103,8 @@ export function ScanPage() {
   return (
     <PageLayout nav navExtra={<FAB onClick={handleMic} />} scroll={false} className="!bg-black">
       <div className="relative flex-1 overflow-hidden bg-black">
-        {/* Cámara fullscreen sin bandas: html5-qrcode inyecta video/canvas aquí */}
-        <div
-          id="scan-region"
-          className="absolute inset-0 h-full w-full [&_video]:!h-full [&_video]:!w-full [&_video]:!object-cover [&_canvas]:!hidden"
-        />
+        {/* Cámara fullscreen — html5-qrcode inyecta <video> aquí. Sin aspect-video ni bandas. */}
+        <div id="scan-region" className="absolute inset-0 h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
 
         {cameraError && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-surface-2">
@@ -132,7 +116,7 @@ export function ScanPage() {
           </div>
         )}
 
-        {/* Overlay visor — solo decorativo, no recorta la cámara */}
+        {/* Overlay visor — solo decorativo */}
         <div className="absolute inset-0 z-10 pointer-events-none">
           <div
             className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(72vw,300px)] h-[min(72vw,300px)] transition-all duration-200 ${isScanning ? 'ring-2 ring-brand/70 rounded-2xl' : ''}`}
