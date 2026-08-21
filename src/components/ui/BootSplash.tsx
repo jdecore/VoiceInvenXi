@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { wakeBackend } from '@/lib/wake'
+import { Logo } from './Logo'
 
 interface BootSplashProps {
   onReady: () => void
@@ -39,7 +40,9 @@ export function BootSplash({ onReady }: BootSplashProps) {
 
   return (
     <div className="boot-splash" role="status" aria-live="polite">
-      <div className="boot-logo">StockXi</div>
+      <div className="boot-logo text-on-surface">
+        <Logo size={48} />
+      </div>
       <div className="boot-spinner" />
       <p className="boot-sub">
         {slow ? 'El servidor se está iniciando, espera un momento…' : 'Despertando el servidor…'}

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { IconScan } from '@tabler/icons-react'
 import { Html5Qrcode } from 'html5-qrcode'
-import { PageLayout, FAB, EmptyState } from '@/components/ui'
+import { PageLayout, FAB, EmptyState, Logo } from '@/components/ui'
 import { useTTS } from '@/hooks/useTTS'
 import { productApi } from '@/api'
 import { generateRandomBarcode } from '@/lib/barcode'
@@ -188,8 +188,10 @@ export function ScanPage() {
           </div>
         </div>
 
-        <div className="scan-topbar">
-          <h1 className="scan-title">StockXi</h1>
+        <div className="scan-topbar flex justify-center">
+          <h1 className="scan-title flex items-center justify-center text-white">
+            <Logo size={36} className="text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]" />
+          </h1>
           {import.meta.env.DEV && (
             <button onClick={handleSimulateScan} className="dev-button">
               Activo
