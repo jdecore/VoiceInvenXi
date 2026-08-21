@@ -21,13 +21,38 @@ export function ScanPage() {
 
   useEffect(() => {
     let cancelled = false
-    const scanner = new Html5Qrcode('scan-region', false)
-    scannerRef.current = scanner
+    const timers: number[] = []
+
+    // Keep only the most recent <video> in #scan-region so a StrictMode
+    // double-mount can never show two camera feeds at once.
+    const ensureSingleVideo = () => {
+      const region = document.getElementById('scan-region')
+      if (!region) return
+      const vids = Array.from(region.querySelectorAll('video'))
+      for (let i = 0; i < vids.length - 1; i++) vids[i].remove()
+    }
+
+    // Reuse the scanner across StrictMode's double-invoke (same fiber, so the
+    // ref survives): only build a new Html5Qrcode if we don't already have one.
+    let scanner = scannerRef.current
+    if (!scanner) {
+      scanner = new Html5Qrcode('scan-region', false)
+      scannerRef.current = scanner
+    }
 
     scanner
       .start(
         { facingMode: 'environment' },
-        { fps: 10 },
+        {
+          fps: 10,
+          // Request a high-resolution stream so the full-screen preview is
+          // sharp instead of a low-res feed stretched to fill the viewport.
+          videoConstraints: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+          },
+        },
         (decodedText) => {
           if (!isProcessingRef.current) handleScanRef.current(decodedText)
         },
@@ -35,18 +60,20 @@ export function ScanPage() {
       )
       .then(() => {
         if (cancelled) {
-          // StrictMode (dev) mounted us twice: the real cleanup ran before
-          // start() resolved, so this scanner finished starting on its own.
-          // Tear it down now or it becomes an orphaned second <video>.
+          // StrictMode (dev) ran the cleanup before start() resolved; stop
+          // this orphaned scanner so it doesn't keep a second <video>.
           try {
-            scanner.stop().catch(() => {}).finally(() => {
-              try { scanner.clear() } catch {}
+            scanner!.stop().catch(() => {}).finally(() => {
+              try { scanner!.clear() } catch {}
             })
           } catch {
-            try { scanner.clear() } catch {}
+            try { scanner!.clear() } catch {}
           }
           return
         }
+        ensureSingleVideo()
+        timers.push(window.setTimeout(ensureSingleVideo, 400))
+        timers.push(window.setTimeout(ensureSingleVideo, 900))
         speak('Apunta la cámara al código de barras')
       })
       .catch(() => {
@@ -56,10 +83,10 @@ export function ScanPage() {
 
     return () => {
       cancelled = true
-      const s = scannerRef.current
-      scannerRef.current = null
+      const toStop = scannerRef.current
       isProcessingRef.current = false
-      const toStop = s ?? scanner
+      timers.forEach((t) => clearTimeout(t))
+      if (!toStop) return
       // stop() may throw synchronously if the scanner is not in the SCANNING
       // state (e.g. still starting, or already stopped). Guard both the call
       // and the promise so cleanup never surfaces an error.
@@ -77,6 +104,9 @@ export function ScanPage() {
           toStop.clear()
         } catch {}
       }
+      // Detach the instance so the next real mount builds a fresh one against
+      // the (re-created) #scan-region element.
+      scannerRef.current = null
     }
   }, [speak])
 
