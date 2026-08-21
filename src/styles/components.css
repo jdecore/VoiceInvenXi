@@ -304,6 +304,11 @@
 .empty-state-desc { color: var(--on-surface-muted); font-size: 14px; margin-top: 4px; max-width: 240px; }
 .empty-state-action { margin-top: 16px; }
 
+/* ============================ Search best match ============================ */
+.result-best {
+  box-shadow: 0 0 0 2px var(--brand-30);
+}
+
 /* ============================ Boot splash ============================ */
 @keyframes boot-spin {
   to { transform: rotate(360deg); }
