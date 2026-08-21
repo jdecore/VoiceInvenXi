@@ -44,7 +44,7 @@ export function NewProductPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [hasTyped, setHasTyped] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [stepRef] = useAutoAnimate<HTMLDivElement>()
+  const [stepRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
     speak('Producto nuevo. Di el nombre del producto.')

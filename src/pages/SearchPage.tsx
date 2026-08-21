@@ -21,7 +21,7 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [hasError, setHasError] = useState(false)
   const debounceRef = useRef<number | null>(null)
-  const [listRef] = useAutoAnimate<HTMLDivElement>()
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
     if (searchParams.get('voice') === 'true' && isSupported) {

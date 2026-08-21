@@ -74,7 +74,7 @@ const icons = {
 
 export function ToastHost() {
   const { toasts, dismissToast } = useToast()
-  const [listRef] = useAutoAnimate<HTMLDivElement>()
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   return (
     <div className="toast-host" aria-live="polite">

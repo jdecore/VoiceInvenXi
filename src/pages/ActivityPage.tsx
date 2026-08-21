@@ -26,7 +26,7 @@ function formatTimeAgo(dateString: string): string {
 export function ActivityPage() {
   const [movements, setMovements] = useState<MovementWithProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [listRef] = useAutoAnimate<HTMLDivElement>()
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
     loadMovements()

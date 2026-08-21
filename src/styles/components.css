@@ -163,14 +163,14 @@
 .fab:disabled { opacity: 0.5; cursor: not-allowed; }
 .fab--idle { background: var(--brand); color: #fff; }
 .fab--idle:hover { background: var(--brand-dark); box-shadow: var(--shadow-brand); }
-.fab--listening { background: var(--error); color: #fff; box-shadow: var(--shadow-error); animation: pulse-mic 1.5s ease-in-out infinite; }
+.fab--listening { background: var(--error); color: #fff; box-shadow: var(--shadow-error); animation: pulse-mic 2s ease-in-out infinite; }
 .fab--listening::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 9999px;
   border: 2px solid var(--error);
-  animation: fab-ripple 1.5s ease-out infinite;
+  animation: fab-ripple 2s ease-out infinite;
 }
 @keyframes fab-ripple {
   0% { transform: scale(1); opacity: 0.6; }
@@ -360,7 +360,6 @@
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
-  animation: route-fade 0.25s var(--ease-smooth);
 }
 .toast--success { border: 1px solid var(--success-30); }
 .toast--error { border: 1px solid var(--error-30); }
@@ -391,7 +390,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
-  animation: route-fade 0.2s var(--ease-smooth);
+  animation: route-fade 0.3s var(--ease-smooth);
 }
 .success-check-wrap { position: relative; }
 .success-ripple {
@@ -399,7 +398,7 @@
   inset: 0;
   border-radius: 9999px;
   background: var(--success-20);
-  animation: success-ripple 1s ease-out infinite;
+  animation: success-ripple 1.4s ease-out infinite;
 }
 @keyframes success-ripple {
   0% { transform: scale(1); opacity: 0.6; }
@@ -414,10 +413,10 @@
   border-radius: 9999px;
   background: var(--success);
   box-shadow: var(--shadow-success);
-  animation: success-pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  animation: success-pop 0.5s var(--ease-smooth);
 }
 @keyframes success-pop {
-  0% { transform: scale(0.6); opacity: 0; }
+  0% { transform: scale(0.85); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 .success-check svg { width: 40px; height: 40px; color: #fff; stroke-width: 3; }

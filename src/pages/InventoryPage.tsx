@@ -10,7 +10,7 @@ export function InventoryPage() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [listRef] = useAutoAnimate<HTMLDivElement>()
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
     loadProducts()
