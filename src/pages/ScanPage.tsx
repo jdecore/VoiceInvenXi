@@ -47,14 +47,23 @@ export function ScanPage() {
       scannerRef.current = null
       isProcessingRef.current = false
       const toStop = s ?? scanner
-      void toStop
-        .stop()
-        .catch(() => {})
-        .finally(() => {
-          try {
-            toStop.clear()
-          } catch {}
-        })
+      // stop() may throw synchronously if the scanner is not in the SCANNING
+      // state (e.g. still starting, or already stopped). Guard both the call
+      // and the promise so cleanup never surfaces an error.
+      try {
+        toStop
+          .stop()
+          .catch(() => {})
+          .finally(() => {
+            try {
+              toStop.clear()
+            } catch {}
+          })
+      } catch {
+        try {
+          toStop.clear()
+        } catch {}
+      }
     }
   }, [speak])
 
