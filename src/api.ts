@@ -39,7 +39,11 @@ export const productApi = {
   },
 
   getByBarcode: async (barcode: string): Promise<Product> => {
-    return await fetcher<Product>(`/api/products/${encodeURIComponent(barcode)}`)
+    const normalizedBarcode = barcode.trim()
+    if (!normalizedBarcode) {
+      throw new Error('Código de barras inválido')
+    }
+    return await fetcher<Product>(`/api/products/${encodeURIComponent(normalizedBarcode)}`)
   },
 
   create: async (data: CreateProductDTO): Promise<Product> => {

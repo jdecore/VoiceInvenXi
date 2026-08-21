@@ -30,28 +30,22 @@ export function SuccessAnimation({
         exit={{ opacity: 0 }}
         className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm"
       >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-          className="relative"
-        >
+        <div className="relative">
           <motion.div
             className="absolute inset-0 rounded-full bg-success/20"
             initial={{ scale: 1 }}
             animate={{ scale: 2.5, opacity: 0 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'easeOut' }}
           />
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-success shadow-lg shadow-success/30">
-            <motion.div
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Check className="w-10 h-10 text-white" strokeWidth={3} />
-            </motion.div>
-          </div>
-        </motion.div>
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+            className="flex items-center justify-center w-20 h-20 rounded-full bg-success shadow-lg shadow-success/30"
+          >
+            <Check className="w-10 h-10 text-white" strokeWidth={3} />
+          </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}

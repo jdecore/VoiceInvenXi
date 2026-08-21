@@ -19,15 +19,12 @@ function nextTick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 10))
 }
 
-type Mode = 'elevenlabs' | 'webspeech' | 'idle'
-
 export function useSTT(): UseSTT {
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
   const isListeningRef = useRef(false)
-  const modeRef = useRef<Mode>('idle')
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -67,6 +64,9 @@ export function useSTT(): UseSTT {
   }, [])
 
   const stop = useCallback(() => {
+    isListeningRef.current = false
+    setIsListening(false)
+    setInterimTranscript('')
     if (recognitionRef.current) {
       recognitionRef.current.stop()
       recognitionRef.current = null
@@ -87,7 +87,6 @@ export function useSTT(): UseSTT {
 
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
-      modeRef.current = 'elevenlabs'
 
       mediaRecorder.ondataavailable = (e: BlobEvent) => {
         if (e.data.size > 0) chunksRef.current.push(e.data)
@@ -159,7 +158,6 @@ export function useSTT(): UseSTT {
     recognition.interimResults = true
     recognition.continuous = false
     recognitionRef.current = recognition
-    modeRef.current = 'webspeech'
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let final = ''

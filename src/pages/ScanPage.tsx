@@ -78,11 +78,8 @@ export function ScanPage() {
   const decodingRef = useRef(false)
   const hasAnnouncedRef = useRef(false)
   const lastInvalidToastAtRef = useRef(0)
-  const isScanningRef = useRef(isScanning)
-
-  useEffect(() => {
-    isScanningRef.current = isScanning
-  }, [isScanning])
+  const isScanningRef = useRef(false)
+  const handleScanRef = useRef<(barcode: string) => Promise<void>>(async () => {})
 
   const getCanvas = useCallback(() => {
     if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
@@ -138,7 +135,7 @@ export function ScanPage() {
 
       const code = await decodeCanvas(canvas)
       if (code && !isScanningRef.current) {
-        void handleScan(code)
+        void handleScanRef.current(code)
       }
     } finally {
       decodingRef.current = false
@@ -181,6 +178,10 @@ export function ScanPage() {
       }, 3000)
     }
   }, [navigate, showToast, stopCamera])
+
+  useEffect(() => {
+    handleScanRef.current = handleScan
+  }, [handleScan])
 
   useEffect(() => {
     const video = videoRef.current
