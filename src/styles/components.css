@@ -304,6 +304,38 @@
 .empty-state-desc { color: var(--on-surface-muted); font-size: 14px; margin-top: 4px; max-width: 240px; }
 .empty-state-action { margin-top: 16px; }
 
+/* ============================ Boot splash ============================ */
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+.boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+}
+.boot-logo {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--on-surface);
+}
+.boot-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 4px solid var(--brand-container);
+  border-top-color: var(--brand);
+  animation: boot-spin 0.9s linear infinite;
+}
+.boot-sub { color: var(--on-surface-muted); font-size: 14px; text-align: center; }
+
 /* ============================ Toast ============================ */
 .toast-host {
   position: absolute;

@@ -1,6 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router'
-import { ErrorBoundary, ToastProvider, ToastHost, PhoneFrame } from '@/components/ui'
+import { ErrorBoundary, ToastProvider, ToastHost, PhoneFrame, BootSplash } from '@/components/ui'
 
 const ScanPage = lazy(() => import('@/pages/ScanPage').then(m => ({ default: m.ScanPage })))
 const SearchPage = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })))
@@ -43,15 +43,21 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  const [booted, setBooted] = useState(false)
+
   return (
     <ToastProvider>
       <ErrorBoundary>
-        <BrowserRouter>
-          <PhoneFrame>
-            <ToastHost />
-            <AnimatedRoutes />
-          </PhoneFrame>
-        </BrowserRouter>
+        {booted ? (
+          <BrowserRouter>
+            <PhoneFrame>
+              <ToastHost />
+              <AnimatedRoutes />
+            </PhoneFrame>
+          </BrowserRouter>
+        ) : (
+          <BootSplash onReady={() => setBooted(true)} />
+        )}
       </ErrorBoundary>
     </ToastProvider>
   )
