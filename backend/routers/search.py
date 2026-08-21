@@ -35,24 +35,46 @@ class SearchResponse(BaseModel):
 
 @router.post("/semantic")
 async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)):
+    # Embedding may be unavailable (no provider key configured, or the
+    # embedding column is empty). Never fail the whole request: fall back to
+    # lexical search so the app stays usable.
+    query_vector = None
     try:
         query_vector = await get_query_embedding(req.query)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.warning(f"Query embedding unavailable, using lexical-only search: {e}")
 
-    vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
+    merged: dict[str, SearchResult] = {}
 
-    # Vector (semantic) search — broad to allow hybrid merge below.
-    vector_sql = text("""
-        SELECT id, barcode, name, brand, category, presentation, unit, stock,
-                1 - (embedding <=> :vector::vector) AS similarity
-        FROM products
-        WHERE embedding IS NOT NULL
-        ORDER BY embedding <=> :vector::vector
-        LIMIT 20
-    """)
-    vector_result = await db.execute(vector_sql, {"vector": vector_str})
-    vector_rows = vector_result.fetchall()
+    if query_vector is not None:
+        vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
+        # Note: bind the vector then cast, i.e. (:vector)::vector — asyncpg
+        # rejects the unparenthesized :vector::vector form.
+        vector_sql = text("""
+            SELECT id, barcode, name, brand, category, presentation, unit, stock,
+                    1 - (embedding <=> (:vector)::vector) AS similarity
+            FROM products
+            WHERE embedding IS NOT NULL
+            ORDER BY embedding <=> (:vector)::vector
+            LIMIT 20
+        """)
+        vector_result = await db.execute(vector_sql, {"vector": vector_str})
+        vector_rows = vector_result.fetchall()
+
+        for row in vector_rows:
+            if row.similarity < 0.4:
+                continue
+            merged[str(row.id)] = SearchResult(
+                id=str(row.id),
+                barcode=row.barcode,
+                name=row.name,
+                brand=row.brand,
+                category=row.category,
+                presentation=row.presentation,
+                unit=row.unit,
+                stock=row.stock,
+                score=round(float(row.similarity), 4),
+            )
 
     # Lexical fallback — exact/typed matches by name or barcode.
     like_param = f"%{req.query.strip()}%"
@@ -66,23 +88,6 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
     like_rows = like_result.fetchall()
 
     # Merge and dedupe by id; lexical hits are kept even when vector score is low.
-    merged: dict[str, SearchResult] = {}
-
-    for row in vector_rows:
-        if row.similarity < 0.4:
-            continue
-        merged[str(row.id)] = SearchResult(
-            id=str(row.id),
-            barcode=row.barcode,
-            name=row.name,
-            brand=row.brand,
-            category=row.category,
-            presentation=row.presentation,
-            unit=row.unit,
-            stock=row.stock,
-            score=round(float(row.similarity), 4),
-        )
-
     for row in like_rows:
         rid = str(row.id)
         # Exact (barcode) matches score highest; otherwise a strong lexical score.
@@ -142,7 +147,7 @@ async def seed_embeddings(db: AsyncSession = Depends(get_db)):
         try:
             vector_str = "[" + ",".join(str(v) for v in embedding) + "]"
             await db.execute(
-                text("UPDATE products SET embedding = :vector::vector WHERE id = :id::uuid"),
+                text("UPDATE products SET embedding = (:vector)::vector WHERE id = (:id)::uuid"),
                 {"vector": vector_str, "id": product_id},
             )
             updated += 1
