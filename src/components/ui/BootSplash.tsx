@@ -41,7 +41,7 @@ export function BootSplash({ onReady }: BootSplashProps) {
   return (
     <div className="boot-splash" role="status" aria-live="polite">
       <div className="boot-logo text-on-surface">
-        <Logo size={48} />
+        <Logo size={58} />
       </div>
       <div className="boot-spinner" />
       <p className="boot-sub">

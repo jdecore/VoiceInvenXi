@@ -190,7 +190,7 @@ export function ScanPage() {
 
         <div className="scan-topbar flex justify-center">
           <h1 className="scan-title flex items-center justify-center text-white">
-            <Logo size={36} className="text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]" />
+            <Logo size={43} className="text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]" />
           </h1>
           {import.meta.env.DEV && (
             <button onClick={handleSimulateScan} className="dev-button">
