@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { Package } from 'lucide-react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, ProductRow, EmptyState, Skeleton } from '@/components/ui'
 import { productApi } from '@/api'
 import type { Product } from '@/types'
@@ -9,6 +10,7 @@ export function InventoryPage() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
 
   useEffect(() => {
     loadProducts()
@@ -29,7 +31,7 @@ export function InventoryPage() {
     <PageLayout
       nav
       header={<Header title="Inventario" />}
-      contentClassName="px-4 pb-[calc(10%+8rem)]"
+      contentClassName="px-4 content-nav-safe"
     >
       {isLoading ? (
         <div className="space-y-3">
@@ -39,12 +41,12 @@ export function InventoryPage() {
         </div>
       ) : products.length === 0 ? (
         <EmptyState
-          icon={<Package className="w-8 h-8 text-on-surface-muted" />}
+          icon={<Package />}
           title="Sin productos"
           description="Escanea un código de barras para agregar productos"
         />
       ) : (
-        <div className="space-y-3">
+        <div ref={listRef} className="space-y-3">
           {products.map((product) => (
             <Card
               key={product.id}

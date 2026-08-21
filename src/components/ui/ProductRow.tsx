@@ -10,13 +10,13 @@ interface ProductRowProps {
 
 export function ProductRow({ name, meta, stock, unit }: ProductRowProps) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-brand-container shrink-0">
-        <Package className="w-5 h-5 text-brand" />
+    <div className="product-row">
+      <div className="product-row-tile">
+        <Package />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-on-surface font-medium truncate">{name}</p>
-        <p className="text-on-surface-muted text-sm truncate">{meta}</p>
+      <div className="product-row-body">
+        <p className="product-row-name">{name}</p>
+        <p className="product-row-meta">{meta}</p>
       </div>
       <StockBadge stock={stock} unit={unit} />
     </div>

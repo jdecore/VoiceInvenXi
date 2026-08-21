@@ -2,7 +2,6 @@ interface StockValueProps {
   stock: number
   unit?: string | null
   className?: string
-  unitClassName?: string
 }
 
 export function getStockColor(stock: number): string {
@@ -11,11 +10,11 @@ export function getStockColor(stock: number): string {
   return 'text-success'
 }
 
-export function StockValue({ stock, unit, className = '', unitClassName = 'text-sm text-on-surface-muted' }: StockValueProps) {
+export function StockValue({ stock, unit, className = '' }: StockValueProps) {
   return (
-    <span className={`tabular-nums ${className}`}>
+    <span className={`stock-value ${className}`}>
       {stock}
-      {unit && <span className={`ml-1 ${unitClassName}`}>{unit}</span>}
+      {unit && <span className="unit">{unit}</span>}
     </span>
   )
 }

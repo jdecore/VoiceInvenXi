@@ -71,12 +71,34 @@ export const movementApi = {
   },
 }
 
+export interface SeedEmbeddingsResponse {
+  updated: number
+  total: number
+}
+
 export const searchApi = {
   semanticSearch: async (query: string): Promise<SemanticSearchResponse> => {
     return await fetcher<SemanticSearchResponse>('/api/search/semantic', {
       method: 'POST',
       body: JSON.stringify({ query }),
     })
+  },
+
+  seedEmbeddings: async (): Promise<SeedEmbeddingsResponse> => {
+    const url = `${API_BASE}/api/search/seed-embeddings`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+    try {
+      const response = await fetch(url, { method: 'POST', signal: controller.signal })
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        const msg = body?.detail?.message || body?.message
+        throw new Error(msg || `Error HTTP ${response.status}`)
+      }
+      return (await response.json()) as SeedEmbeddingsResponse
+    } finally {
+      clearTimeout(timeout)
+    }
   },
 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { Check } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, Input, Button, FAB, VoiceWave, SuccessAnimation, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { useTTS } from '@/hooks/useTTS'
@@ -10,7 +10,7 @@ import { productApi, agentApi } from '@/api'
 interface WizardStep {
   key: string
   label: string
-  field: keyof typeof INITIAL_VALUES
+  field: string
   required: boolean
   autoAdvance?: boolean
 }
@@ -44,6 +44,7 @@ export function NewProductPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [hasTyped, setHasTyped] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [stepRef] = useAutoAnimate<HTMLDivElement>()
 
   useEffect(() => {
     speak('Producto nuevo. Di el nombre del producto.')
@@ -100,7 +101,7 @@ export function NewProductPage() {
   const handleNext = () => {
     const step = STEPS[currentStep]
 
-    if (step.required && !values[step.field].trim()) {
+    if (step.required && !values[step.field as keyof typeof values].trim()) {
       showToast('error', `El campo "${step.label}" es obligatorio`)
       return
     }
@@ -161,77 +162,59 @@ export function NewProductPage() {
       )}
       <Header title="Nuevo Producto" subtitle={barcode} />
 
-      <div className="flex items-center justify-center gap-2 px-4 py-3">
+      <div className="stepper">
         {STEPS.map((s, i) => (
           <div
             key={s.key}
-            className={`
-              h-1.5 rounded-full transition-all duration-300
-              ${i === currentStep
-                ? 'w-8 bg-brand'
-                : i < currentStep
-                  ? 'w-3 bg-success'
-                  : 'w-3 bg-surface-3'
-              }
-            `}
+            className={`step-dot ${i === currentStep ? 'step-dot--current' : i < currentStep ? 'step-dot--done' : ''}`}
           />
         ))}
       </div>
 
-      <div className="px-4 pb-3">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 28 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -28 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-on-surface-variant text-sm font-medium">
-                  Paso {currentStep + 1} de {STEPS.length}
-                </p>
-                {step.required && (
-                  <span className="text-error text-xs font-medium">Requerido</span>
-                )}
-              </div>
+      <div ref={stepRef} className="px-4 pb-3">
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-on-surface-variant text-sm font-medium">
+              Paso {currentStep + 1} de {STEPS.length}
+            </p>
+            {step.required && (
+              <span className="text-error text-xs font-medium">Requerido</span>
+            )}
+          </div>
 
-              <Input
-                ref={inputRef}
-                label={step.label}
-                value={values[step.field]}
-                onChange={(e) => {
-                  setHasTyped(true)
-                  setValues((prev) => ({ ...prev, [step.field]: e.target.value }))
-                }}
-                placeholder={`Ingresa ${step.label.toLowerCase()}...`}
-                enterKeyHint="done"
-              />
+          <Input
+            ref={inputRef}
+            label={step.label}
+            value={values[step.field as keyof typeof values]}
+            onChange={(e) => {
+              setHasTyped(true)
+              setValues((prev) => ({ ...prev, [step.field]: e.target.value }))
+            }}
+            placeholder={`Ingresa ${step.label.toLowerCase()}...`}
+            enterKeyHint="done"
+          />
 
-              <div className="flex flex-col items-center gap-3 pt-4">
-                {isListening && <VoiceWave active />}
+          <div className="flex flex-col items-center gap-3 pt-4">
+            {isListening && <VoiceWave active />}
 
-                <FAB
-                  isListening={isListening}
-                  onClick={isListening ? stop : handleVoice}
-                  disabled={!isSupported}
-                  aria-label={`Hablar para ingresar ${step.label.toLowerCase()}`}
-                />
+            <FAB
+              isListening={isListening}
+              onClick={isListening ? stop : handleVoice}
+              disabled={!isSupported}
+              aria-label={`Hablar para ingresar ${step.label.toLowerCase()}`}
+            />
 
-                <p className="text-on-surface-muted text-sm text-center">
-                  {isListening
-                    ? interimTranscript || `Di ${step.label.toLowerCase()}...`
-                    : 'Toca para hablar'}
-                </p>
-              </div>
+            <p className="text-on-surface-muted text-sm text-center">
+              {isListening
+                ? interimTranscript || `Di ${step.label.toLowerCase()}...`
+                : 'Toca para hablar'}
+            </p>
+          </div>
 
-              {error && (
-                <p className="text-error text-sm text-center mt-2">{error}</p>
-              )}
-            </Card>
-          </motion.div>
-        </AnimatePresence>
+          {error && (
+            <p className="text-error text-sm text-center mt-2">{error}</p>
+          )}
+        </Card>
       </div>
 
       <div className="flex gap-3 px-4 py-4 pb-8">
@@ -248,7 +231,7 @@ export function NewProductPage() {
         >
           {currentStep === STEPS.length - 1 ? (
             <>
-              <Check className="w-4 h-4" />
+              <Check />
               {isSaving ? 'Guardando...' : 'Guardar'}
             </>
           ) : (

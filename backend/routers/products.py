@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import logging
+
+logger = logging.getLogger(__name__)
 from database import get_db
 from models import Product
 from schemas import ProductCreate, ProductResponse, ApiResponse
+from embeddings import get_embedding, build_product_text
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -48,6 +52,18 @@ async def create_product(data: ProductCreate, db: AsyncSession = Depends(get_db)
     db.add(product)
     await db.commit()
     await db.refresh(product)
+
+    # Auto-generate embedding so the new product is immediately searchable.
+    # Failures here must NOT break product creation.
+    try:
+        text = build_product_text(
+            product.name, product.brand, product.category, product.presentation
+        )
+        embedding = await get_embedding(text)
+        product.embedding = embedding
+        await db.commit()
+    except Exception as e:
+        logger.warning(f"Auto-embedding skipped for new product {product.barcode}: {e}")
 
     return ApiResponse(
         success=True,

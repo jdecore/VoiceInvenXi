@@ -78,7 +78,7 @@ export function ProductPage() {
 
       setProduct((prev) => prev ? {
         ...prev,
-        stock: type === 'in' ? prev.stock + quantity : prev.stock - quantity,
+        stock: type === 'in' ? prev.stock + quantity! : prev.stock - quantity!,
       } : null)
 
       setShowSuccess(true)
@@ -129,100 +129,82 @@ export function ProductPage() {
       <Header title={product.name} subtitle={product.barcode} />
 
       <div className="px-4 space-y-4 pb-32">
-        <div className="h-40 rounded-2xl bg-surface-2 flex flex-col items-center justify-center gap-2 border border-outline-variant/50">
-          <Package className="w-8 h-8 text-on-surface-muted" />
-          <p className="text-on-surface-muted text-sm">Sin imagen</p>
+        <div className="product-image-placeholder">
+          <Package />
+          <p>Sin imagen</p>
         </div>
 
-          <Card>
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-on-surface text-lg font-semibold">{product.name}</p>
-                {product.brand && (
-                  <p className="text-on-surface-muted text-sm">{product.brand}</p>
-                )}
-              </div>
-              <div className="flex flex-col items-end">
-                <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wide">
-                  Stock
-                </p>
-                <div className="flex items-center gap-2">
-                  <StockValue
-                    stock={product.stock}
-                    unit={product.unit}
-                    className={`text-4xl font-bold leading-none ${getStockColor(product.stock)}`}
-                  />
-                  <button
-                    onClick={handleReplayStock}
-                    aria-label="Escuchar stock"
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-surface-2 hover:bg-surface-3 transition-colors"
-                  >
-                    <Volume2 className="w-4 h-4 text-brand" />
-                  </button>
-                </div>
+        <Card>
+          <div className="product-stock-row">
+            <div className="min-w-0">
+              <p className="product-info-title">{product.name}</p>
+              {product.brand && (
+                <p className="product-info-brand">{product.brand}</p>
+              )}
+            </div>
+            <div className="flex flex-col items-end">
+              <p className="product-stock-label">Stock</p>
+              <div className="product-stock-value">
+                <StockValue
+                  stock={product.stock}
+                  unit={product.unit}
+                  className={getStockColor(product.stock)}
+                />
+                <button onClick={handleReplayStock} aria-label="Escuchar stock" className="replay-btn">
+                  <Volume2 />
+                </button>
               </div>
             </div>
-          </Card>
-
-          <div className="flex gap-2">
-            {product.category && (
-              <span className="px-3 py-1 rounded-full bg-surface-2 text-on-surface-variant text-sm border border-outline-variant/50">
-                {product.category}
-              </span>
-            )}
-            {product.presentation && (
-              <span className="px-3 py-1 rounded-full bg-surface-2 text-on-surface-variant text-sm border border-outline-variant/50">
-                {product.presentation}
-              </span>
-            )}
           </div>
+        </Card>
 
-          <Card>
-            <p className="text-on-surface-variant text-sm font-medium mb-3">Tipo de movimiento</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setMovementType('in')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
-                  movementType === 'in'
-                    ? 'bg-success-container text-success border border-success/30'
-                    : 'bg-surface-2 text-on-surface-muted border border-outline-variant/50'
-                }`}
-              >
-                <Plus className="w-5 h-5" />
-                Entrada
-              </button>
-              <button
-                onClick={() => setMovementType('out')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
-                  movementType === 'out'
-                    ? 'bg-error-container text-error border border-error/30'
-                    : 'bg-surface-2 text-on-surface-muted border border-outline-variant/50'
-                }`}
-              >
-                <Minus className="w-5 h-5" />
-                Salida
-              </button>
-            </div>
-          </Card>
-
-          <div className="flex flex-col items-center gap-3 py-4">
-            <FAB isListening={isListening} onClick={handleMic} />
-            <p className="text-on-surface-muted text-sm">
-              {isListening
-                ? interimTranscript || `Di la cantidad para ${movementType === 'in' ? 'entrada' : 'salida'}...`
-                : 'Toca para decir la cantidad'}
-            </p>
-            {error && (
-              <p className="text-error text-sm">{error}</p>
-            )}
-          </div>
-
-          {isListening && (
-            <div className="flex justify-center">
-              <VoiceWave active />
-            </div>
+        <div className="flex gap-2">
+          {product.category && (
+            <span className="tag">{product.category}</span>
+          )}
+          {product.presentation && (
+            <span className="tag">{product.presentation}</span>
           )}
         </div>
+
+        <Card>
+          <p className="text-on-surface-variant text-sm font-medium mb-3">Tipo de movimiento</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMovementType('in')}
+              className={`movement-toggle ${movementType === 'in' ? 'movement-toggle--in' : ''}`}
+            >
+              <Plus />
+              Entrada
+            </button>
+            <button
+              onClick={() => setMovementType('out')}
+              className={`movement-toggle ${movementType === 'out' ? 'movement-toggle--out' : ''}`}
+            >
+              <Minus />
+              Salida
+            </button>
+          </div>
+        </Card>
+
+        <div className="flex flex-col items-center gap-3 py-4">
+          <FAB isListening={isListening} onClick={handleMic} />
+          <p className="text-on-surface-muted text-sm">
+            {isListening
+              ? interimTranscript || `Di la cantidad para ${movementType === 'in' ? 'entrada' : 'salida'}...`
+              : 'Toca para decir la cantidad'}
+          </p>
+          {error && (
+            <p className="text-error text-sm">{error}</p>
+          )}
+        </div>
+
+        {isListening && (
+          <div className="flex justify-center">
+            <VoiceWave active />
+          </div>
+        )}
+      </div>
     </PageLayout>
   )
 }

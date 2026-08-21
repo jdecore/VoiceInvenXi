@@ -16,6 +16,18 @@ JINA_MODEL = "jina-embeddings-v5-text-small"
 TIMEOUT = 30.0
 BATCH_SIZE = 96
 
+# Lock a single provider at startup. Mixing providers would write incompatible
+# vectors into the same `embedding vector(1024)` column, destroying cosine
+# similarity. Cohere is preferred; fall back to Jina only if Cohere is unset.
+if COHERE_API_KEY:
+    EMBEDDING_PROVIDER = "cohere"
+elif JINA_API_KEY:
+    EMBEDDING_PROVIDER = "jina"
+else:
+    EMBEDDING_PROVIDER = None
+
+logger.info(f"Embedding provider locked to: {EMBEDDING_PROVIDER or 'NONE (not configured)'}")
+
 
 async def _cohere_embedding(texts: list[str], input_type: str) -> list[list[float]]:
     async with httpx.AsyncClient() as client:
@@ -59,19 +71,17 @@ async def _jina_embedding(texts: list[str], task: str) -> list[list[float]]:
         return [item["embedding"] for item in data["data"]]
 
 
-async def _embed_with_fallback(texts: list[str], cohere_input_type: str, jina_task: str) -> list[list[float]]:
-    if COHERE_API_KEY:
-        try:
-            return await _cohere_embedding(texts, cohere_input_type)
-        except Exception as e:
-            logger.warning(f"Cohere fallback to Jina: {e}")
-    if JINA_API_KEY:
-        return await _jina_embedding(texts, jina_task)
-    raise ValueError("Neither COHERE_API_KEY nor JINA_API_KEY configured")
+async def _embed(texts: list[str], cohere_input_type: str, jina_task: str) -> list[list[float]]:
+    """Embed using the single locked provider. No runtime fallback."""
+    if EMBEDDING_PROVIDER is None:
+        raise ValueError("Neither COHERE_API_KEY nor JINA_API_KEY configured")
+    if EMBEDDING_PROVIDER == "cohere":
+        return await _cohere_embedding(texts, cohere_input_type)
+    return await _jina_embedding(texts, jina_task)
 
 
 async def get_embedding(text: str) -> list[float]:
-    result = await _embed_with_fallback([text], "search_document", "retrieval.document")
+    result = await _embed([text], "search_document", "retrieval.document")
     return result[0]
 
 
@@ -79,13 +89,13 @@ async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     all_embeddings = []
     for i in range(0, len(texts), BATCH_SIZE):
         batch = texts[i : i + BATCH_SIZE]
-        batch_embeddings = await _embed_with_fallback(batch, "search_document", "retrieval.document")
+        batch_embeddings = await _embed(batch, "search_document", "retrieval.document")
         all_embeddings.extend(batch_embeddings)
     return all_embeddings
 
 
 async def get_query_embedding(text: str) -> list[float]:
-    result = await _embed_with_fallback([text], "search_query", "retrieval.query")
+    result = await _embed([text], "search_query", "retrieval.query")
     return result[0]
 
 

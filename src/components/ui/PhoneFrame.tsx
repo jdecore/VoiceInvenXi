@@ -6,25 +6,14 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({ children }: PhoneFrameProps) {
   return (
-    <div className="relative h-full w-full overflow-hidden lg:flex lg:items-center lg:justify-center">
-      {/* Ambient background - only visible on desktop */}
-      <div className="hidden lg:block absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20vh] -left-[10vw] w-[55vw] h-[55vw] rounded-full bg-brand/10 blur-[120px] animate-[float_18s_ease-in-out_infinite]" />
-        <div className="absolute -bottom-[15vh] -right-[10vw] w-[50vw] h-[50vw] rounded-full bg-success/8 blur-[120px] animate-[float_22s_ease-in-out_infinite_reverse]" />
-        <div className="absolute top-[30vh] right-[20vw] w-[45vw] h-[45vw] rounded-full bg-brand-light/6 blur-[120px] animate-[float_26s_ease-in-out_infinite]" />
+    <div className="phone-frame-outer">
+      <div className="ambient" aria-hidden="true">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="blob blob-3" />
       </div>
 
-      {/* Phone frame - fills viewport on mobile, centered mockup on desktop */}
-      <div className="
-        relative z-10
-        h-full w-full
-        lg:h-[min(844px,calc(100%-1.5rem))] lg:max-w-[480px] lg:w-[480px]
-        lg:rounded-[44px]
-        lg:border lg:border-outline-variant/30
-        lg:shadow-[0_20px_80px_rgba(0,0,0,0.12)]
-        overflow-hidden
-        bg-surface
-      ">
+      <div className="phone-frame-inner">
         {children}
       </div>
     </div>

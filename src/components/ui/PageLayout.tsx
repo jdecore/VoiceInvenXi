@@ -21,17 +21,17 @@ export function PageLayout({
   className = '',
 }: PageLayoutProps) {
   const contentClasses = scroll
-    ? 'relative flex-1 overflow-y-auto'
-    : 'relative flex-1 overflow-hidden flex flex-col'
+    ? 'page-scroll scrollbar-thin'
+    : 'page-fixed'
 
   return (
-    <div className={`relative h-full flex flex-col bg-surface overflow-hidden ${className}`}>
+    <div className={`page ${className}`}>
       {header}
       <div className={`${contentClasses} ${contentClassName}`}>
         {children}
       </div>
       {nav && (
-        <div className="absolute bottom-[10%] left-0 right-0 z-20 flex items-center justify-center gap-2 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="nav-dock">
           <NavBar />
           {navExtra}
         </div>

@@ -79,7 +79,6 @@ export function ScanPage() {
       } catch {
         navigate(`/new/${encodeURIComponent(barcode)}`)
       }
-      // Si la navegación no desmonta (ej. error), liberar lock tras 2.5s
       setTimeout(() => {
         isProcessingRef.current = false
         setIsScanning(false)
@@ -101,50 +100,39 @@ export function ScanPage() {
   }
 
   return (
-    <PageLayout nav navExtra={<FAB onClick={handleMic} />} scroll={false} className="!bg-black">
+    <PageLayout nav navExtra={<FAB onClick={handleMic} />} scroll={false} className="scan-bg-black">
       <div className="relative flex-1 overflow-hidden bg-black">
-        {/* Cámara fullscreen — html5-qrcode inyecta <video> aquí. Sin aspect-video ni bandas. */}
-        <div id="scan-region" className="absolute inset-0 h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
+        <div id="scan-region" />
 
         {cameraError && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-surface-2">
             <EmptyState
-              icon={<ScanLine className="w-8 h-8 text-on-surface-muted" />}
+              icon={<ScanLine />}
               title="Cámara no disponible"
               description="Verifica los permisos de la cámara en tu navegador"
             />
           </div>
         )}
 
-        {/* Overlay visor — solo decorativo */}
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          <div
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(72vw,300px)] h-[min(72vw,300px)] transition-all duration-200 ${isScanning ? 'ring-2 ring-brand/70 rounded-2xl' : ''}`}
-          >
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-brand rounded-tl-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
-            <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-brand rounded-tr-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
-            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-brand rounded-bl-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-brand rounded-br-xl animate-[corner-pulse_2.4s_ease-in-out_infinite]" />
-            <div className="absolute left-3 right-3 top-0 bottom-0 overflow-hidden">
-              <div className="h-[2px] rounded-full bg-gradient-to-r from-transparent via-brand to-transparent shadow-[0_0_10px_rgba(249,115,22,0.9)] animate-[scan-line_2.4s_ease-in-out_infinite]" />
-            </div>
+        <div className="scan-overlay">
+          <div className={`scan-frame ${isScanning ? 'scan-frame--active' : ''}`}>
+            <div className="scan-corner scan-corner--tl" />
+            <div className="scan-corner scan-corner--tr" />
+            <div className="scan-corner scan-corner--bl" />
+            <div className="scan-corner scan-corner--br" />
+            <div className="scan-line-bar" />
           </div>
-          <div className="absolute bottom-[calc(10%+7rem)] left-0 right-0 flex justify-center">
-            <div className="px-4 py-2 rounded-full bg-black/45 backdrop-blur-sm text-center">
-              <p className="text-white text-sm font-medium whitespace-nowrap">
-                {isScanning ? 'Escaneando...' : 'Apunta al código de barras'}
-              </p>
+          <div className="scan-hint">
+            <div className="scan-hint-pill">
+              <p>{isScanning ? 'Escaneando...' : 'Apunta al código de barras'}</p>
             </div>
           </div>
         </div>
 
-        <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4">
-          <h1 className="text-center text-white text-lg font-bold drop-shadow-md">VoiceInvenXi</h1>
+        <div className="scan-topbar">
+          <h1 className="scan-title">VoiceInvenXi</h1>
           {import.meta.env.DEV && (
-            <button
-              onClick={handleSimulateScan}
-              className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-on-surface text-xs font-medium shadow-sm hover:bg-white transition-all duration-150 active:scale-95"
-            >
+            <button onClick={handleSimulateScan} className="dev-button">
               Activo
             </button>
           )}

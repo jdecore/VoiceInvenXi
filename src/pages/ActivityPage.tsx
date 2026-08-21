@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ArrowUpCircle, ArrowDownCircle, Activity } from 'lucide-react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, EmptyState, Skeleton } from '@/components/ui'
 import { movementApi } from '@/api'
 import type { Movement } from '@/types'
@@ -25,6 +26,7 @@ function formatTimeAgo(dateString: string): string {
 export function ActivityPage() {
   const [movements, setMovements] = useState<MovementWithProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
 
   useEffect(() => {
     loadMovements()
@@ -45,7 +47,7 @@ export function ActivityPage() {
     <PageLayout
       nav
       header={<Header title="Actividad" />}
-      contentClassName="px-4 pb-[calc(10%+8rem)]"
+      contentClassName="px-4 content-nav-safe"
     >
       {isLoading ? (
         <div className="space-y-3">
@@ -55,37 +57,23 @@ export function ActivityPage() {
         </div>
       ) : movements.length === 0 ? (
         <EmptyState
-          icon={<Activity className="w-8 h-8 text-on-surface-muted" />}
+          icon={<Activity />}
           title="Sin actividad"
           description="Los movimientos de stock aparecerán aquí"
         />
       ) : (
-        <div className="space-y-3">
+        <div ref={listRef} className="space-y-3">
           {movements.map((movement) => (
             <Card key={movement.id}>
               <div className="flex items-center gap-3">
-                <div className={`flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 ${
-                  movement.type === 'in'
-                    ? 'bg-success-container'
-                    : 'bg-error-container'
-                }`}>
-                  {movement.type === 'in' ? (
-                    <ArrowDownCircle className="w-5 h-5 text-success" />
-                  ) : (
-                    <ArrowUpCircle className="w-5 h-5 text-error" />
-                  )}
+                <div className={`activity-icon ${movement.type === 'in' ? 'activity-icon--in' : 'activity-icon--out'}`}>
+                  {movement.type === 'in' ? <ArrowDownCircle /> : <ArrowUpCircle />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-on-surface text-sm font-medium truncate">
-                    {movement.productName}
-                  </p>
-                  <p className="text-on-surface-muted text-xs">
-                    {formatTimeAgo(movement.createdAt)}
-                  </p>
+                  <p className="activity-name">{movement.productName}</p>
+                  <p className="activity-time">{formatTimeAgo(movement.createdAt)}</p>
                 </div>
-                <span className={`text-sm font-semibold ${
-                  movement.type === 'in' ? 'text-success' : 'text-error'
-                }`}>
+                <span className={`activity-qty ${movement.type === 'in' ? 'activity-qty--in' : 'activity-qty--out'}`}>
                   {movement.type === 'in' ? '+' : '-'}{movement.quantity}
                 </span>
               </div>

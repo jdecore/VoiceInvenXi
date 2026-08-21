@@ -32,24 +32,20 @@ export class ErrorBoundary extends Component<Props, State> {
       const error = this.state.error
       const message = error?.message || String(error) || 'Error inesperado'
       return (
-        <div className="flex flex-col items-center justify-center h-full bg-surface px-6">
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-error-container mb-4">
-            <AlertTriangle className="w-8 h-8 text-error" />
+        <div className="error-screen">
+          <div className="error-icon">
+            <AlertTriangle />
           </div>
-          <h2 className="text-on-surface text-lg font-semibold">Algo salió mal</h2>
-          <p className="text-on-surface-muted text-sm mt-1 text-center max-w-[280px]">
-            {message}
-          </p>
-          <p className="text-on-surface-muted text-xs mt-3 text-center max-w-[280px] break-all">
+          <h2 className="error-title">Algo salió mal</h2>
+          <p className="error-msg">{message}</p>
+          <p className="error-detail">
             {typeof window !== 'undefined' ? window.location.pathname : ''}
           </p>
-          <Button
-            variant="filled"
-            className="mt-6"
-            onClick={() => window.location.reload()}
-          >
-            Reintentar
-          </Button>
+          <div className="error-retry">
+            <Button variant="filled" onClick={() => window.location.reload()}>
+              Reintentar
+            </Button>
+          </div>
         </div>
       )
     }

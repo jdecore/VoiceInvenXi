@@ -25,6 +25,7 @@ export interface Movement {
   quantity: number
   type: 'in' | 'out'
   createdAt: string
+  productName?: string
 }
 
 export interface CreateMovementDTO {

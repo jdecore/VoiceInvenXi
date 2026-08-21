@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
 
 type ToastVariant = 'success' | 'error' | 'info'
@@ -67,47 +67,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 const icons = {
-  success: <CheckCircle className="w-5 h-5 text-success" />,
-  error: <AlertCircle className="w-5 h-5 text-error" />,
-  info: <Info className="w-5 h-5 text-brand" />,
-}
-
-const borderColors = {
-  success: 'border-success/30',
-  error: 'border-error/30',
-  info: 'border-brand/30',
+  success: <CheckCircle />,
+  error: <AlertCircle />,
+  info: <Info />,
 }
 
 export function ToastHost() {
   const { toasts, dismissToast } = useToast()
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-[480px] px-4 flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence>
+    <div className="toast-host" aria-live="polite">
+      <div ref={listRef} className="flex flex-col gap-2">
         {toasts.map((toast) => (
-          <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -16, scale: 0.96 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className={`
-              flex items-center gap-3 px-4 py-3
-              bg-white rounded-2xl shadow-lg
-              border ${borderColors[toast.variant]} pointer-events-auto
-            `}
-          >
+          <div key={toast.id} className={`toast toast--${toast.variant}`}>
             {icons[toast.variant]}
-            <p className="flex-1 text-sm text-on-surface">{toast.message}</p>
-            <button
-              onClick={() => dismissToast(toast.id)}
-              className="text-on-surface-muted hover:text-on-surface transition-colors"
-            >
-              <X className="w-4 h-4" />
+            <p className="toast-msg">{toast.message}</p>
+            <button onClick={() => dismissToast(toast.id)} className="toast-close" aria-label="Cerrar">
+              <X />
             </button>
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
+      </div>
     </div>
   )
 }

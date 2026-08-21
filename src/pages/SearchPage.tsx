@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Search, Sparkles } from 'lucide-react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { PageLayout, Header, Card, Input, FAB, VoiceWave, Skeleton, EmptyState, ProductRow, useToast } from '@/components/ui'
 import { useSTT } from '@/hooks/useSTT'
 import { searchApi } from '@/api'
@@ -20,6 +21,7 @@ export function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [hasError, setHasError] = useState(false)
   const debounceRef = useRef<number | null>(null)
+  const [listRef] = useAutoAnimate<HTMLDivElement>()
 
   useEffect(() => {
     if (searchParams.get('voice') === 'true' && isSupported) {
@@ -90,20 +92,20 @@ export function SearchPage() {
       nav
       navExtra={<FAB isListening={isListening} onClick={handleMic} />}
       header={<Header title="Búsqueda" subtitle={results.length > 0 ? `${results.length} resultados` : undefined} showBack />}
-      contentClassName="px-4 pb-[calc(10%+8rem)]"
+      contentClassName="px-4 content-nav-safe"
     >
       <div className="pt-1">
         <Input
           label="Buscar producto"
           placeholder="Escribe o usa el micrófono..."
-          icon={<Search className="w-4 h-4" />}
+          icon={<Search />}
           value={query}
           onChange={(e) => handleTextChange(e.target.value)}
         />
       </div>
 
       {isListening && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface-1 border border-outline-variant/50 px-4 py-3">
+        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface-1 border-outline-variant-50 px-4 py-3">
           <VoiceWave active />
           <p className="flex-1 text-on-surface-muted text-sm truncate">
             {interimTranscript || 'Di algo para buscar...'}
@@ -112,27 +114,20 @@ export function SearchPage() {
       )}
 
       {error && (
-        <div className="mt-4 p-3 rounded-xl bg-error-container border border-error/20">
+        <div className="mt-4 p-3 rounded-xl bg-error-container border-error-20">
           <p className="text-error text-sm">{error}</p>
         </div>
       )}
 
       {!hasSearched && !isLoading && (
         <div className="mt-5">
-          <div className="flex items-center gap-1.5 text-on-surface-muted text-xs font-medium uppercase tracking-wide">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1-5 text-on-surface-muted text-xs font-medium uppercase tracking-wide">
+            <Sparkles />
             Sugerencias
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {SUGGESTIONS.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleSuggestion(suggestion)}
-                className="px-3.5 py-2 rounded-full bg-surface-1 border border-outline-variant/50
-                  text-on-surface text-sm font-medium
-                  hover:bg-surface-2 active:bg-surface-3
-                  transition-colors duration-150 active:scale-95"
-              >
+              <button key={suggestion} onClick={() => handleSuggestion(suggestion)} className="chip">
                 {suggestion}
               </button>
             ))}
@@ -148,12 +143,12 @@ export function SearchPage() {
         </div>
       ) : hasError ? null : hasSearched && results.length === 0 ? (
         <EmptyState
-          icon={<Search className="w-8 h-8 text-on-surface-muted" />}
+          icon={<Search />}
           title={query ? `No encontramos "${query}"` : 'Sin resultados'}
           description="Prueba con otras palabras o usa el micrófono para buscar por voz"
         />
       ) : (
-        <div className="mt-5 space-y-3">
+        <div ref={listRef} className="mt-5 space-y-3">
           {results.map((result) => (
             <Card key={result.id} interactive onClick={() => handleResultClick(result)}>
               <ProductRow

@@ -42,23 +42,54 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
 
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
 
-    sql = text("""
+    # Vector (semantic) search — broad to allow hybrid merge below.
+    vector_sql = text("""
         SELECT id, barcode, name, brand, category, presentation, unit, stock,
-               1 - (embedding <=> :vector::vector) AS similarity
+                1 - (embedding <=> :vector::vector) AS similarity
         FROM products
         WHERE embedding IS NOT NULL
         ORDER BY embedding <=> :vector::vector
-        LIMIT 5
+        LIMIT 20
     """)
+    vector_result = await db.execute(vector_sql, {"vector": vector_str})
+    vector_rows = vector_result.fetchall()
 
-    result = await db.execute(sql, {"vector": vector_str})
-    rows = result.fetchall()
+    # Lexical fallback — exact/typed matches by name or barcode.
+    like_param = f"%{req.query.strip()}%"
+    like_sql = text("""
+        SELECT id, barcode, name, brand, category, presentation, unit, stock
+        FROM products
+        WHERE name ILIKE :like OR barcode ILIKE :like
+        LIMIT 20
+    """)
+    like_result = await db.execute(like_sql, {"like": like_param})
+    like_rows = like_result.fetchall()
 
-    results = []
-    for row in rows:
-        if row.similarity >= 0.4:
-            results.append(SearchResult(
-                id=str(row.id),
+    # Merge and dedupe by id; lexical hits are kept even when vector score is low.
+    merged: dict[str, SearchResult] = {}
+
+    for row in vector_rows:
+        if row.similarity < 0.4:
+            continue
+        merged[str(row.id)] = SearchResult(
+            id=str(row.id),
+            barcode=row.barcode,
+            name=row.name,
+            brand=row.brand,
+            category=row.category,
+            presentation=row.presentation,
+            unit=row.unit,
+            stock=row.stock,
+            score=round(float(row.similarity), 4),
+        )
+
+    for row in like_rows:
+        rid = str(row.id)
+        # Exact (barcode) matches score highest; otherwise a strong lexical score.
+        lexical_score = 0.95 if row.barcode.lower() == req.query.strip().lower() else 0.8
+        if rid not in merged or lexical_score > merged[rid].score:
+            merged[rid] = SearchResult(
+                id=rid,
                 barcode=row.barcode,
                 name=row.name,
                 brand=row.brand,
@@ -66,8 +97,10 @@ async def semantic_search(req: SearchRequest, db: AsyncSession = Depends(get_db)
                 presentation=row.presentation,
                 unit=row.unit,
                 stock=row.stock,
-                score=round(float(row.similarity), 4),
-            ))
+                score=round(lexical_score, 4),
+            )
+
+    results = sorted(merged.values(), key=lambda r: r.score, reverse=True)[:5]
 
     return {"success": True, "data": SearchResponse(results=results).model_dump()}
 
@@ -88,8 +121,7 @@ async def seed_embeddings(db: AsyncSession = Depends(get_db)):
     texts = []
     product_ids = []
     for product in products:
-        if product.embedding is not None:
-            continue
+        # Re-embed ALL products so the locked provider unifies the column.
         text_content = build_product_text(
             product.name, product.brand, product.category, product.presentation
         )
