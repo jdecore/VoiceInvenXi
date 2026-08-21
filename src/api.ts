@@ -87,7 +87,7 @@ export const searchApi = {
   seedEmbeddings: async (): Promise<SeedEmbeddingsResponse> => {
     const url = `${API_BASE}/api/search/seed-embeddings`
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 120000)
+    const timeout = setTimeout(() => controller.abort(), 180000)
     try {
       const response = await fetch(url, { method: 'POST', signal: controller.signal })
       if (!response.ok) {

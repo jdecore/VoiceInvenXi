@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { IconPackage } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
-import { PageLayout, Header, Card, ProductRow, EmptyState, Skeleton } from '@/components/ui'
+import { PageLayout, Header, Card, ProductRow, EmptyState, Skeleton, Button } from '@/components/ui'
 import { productApi } from '@/api'
 import type { Product } from '@/types'
 
@@ -10,6 +10,7 @@ export function InventoryPage() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
   const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
@@ -17,10 +18,13 @@ export function InventoryPage() {
   }, [])
 
   const loadProducts = async () => {
+    setIsLoading(true)
+    setHasError(false)
     try {
       const data = await productApi.list()
       setProducts(data)
     } catch {
+      setHasError(true)
       setProducts([])
     } finally {
       setIsLoading(false)
@@ -39,6 +43,13 @@ export function InventoryPage() {
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
+      ) : hasError ? (
+        <EmptyState
+          icon={<IconPackage />}
+          title="No se pudo cargar"
+          description="Revisa tu conexión con el servidor e inténtalo de nuevo"
+          action={<Button variant="tonal" onClick={loadProducts}>Reintentar</Button>}
+        />
       ) : products.length === 0 ? (
         <EmptyState
           icon={<IconPackage />}

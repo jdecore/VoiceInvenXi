@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { IconArrowUpCircle, IconArrowDownCircle, IconActivity } from '@tabler/icons-react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
-import { PageLayout, Header, Card, EmptyState, Skeleton } from '@/components/ui'
+import { PageLayout, Header, Card, EmptyState, Skeleton, Button } from '@/components/ui'
 import { movementApi } from '@/api'
 import type { Movement } from '@/types'
 
@@ -26,6 +26,7 @@ function formatTimeAgo(dateString: string): string {
 export function ActivityPage() {
   const [movements, setMovements] = useState<MovementWithProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
   const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 400, easing: "ease-in-out" })
 
   useEffect(() => {
@@ -33,10 +34,13 @@ export function ActivityPage() {
   }, [])
 
   const loadMovements = async () => {
+    setIsLoading(true)
+    setHasError(false)
     try {
       const data = await movementApi.list()
       setMovements(data as MovementWithProduct[])
     } catch {
+      setHasError(true)
       setMovements([])
     } finally {
       setIsLoading(false)
@@ -55,6 +59,13 @@ export function ActivityPage() {
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
+      ) : hasError ? (
+        <EmptyState
+          icon={<IconActivity />}
+          title="No se pudo cargar"
+          description="Revisa tu conexión con el servidor e inténtalo de nuevo"
+          action={<Button variant="tonal" onClick={loadMovements}>Reintentar</Button>}
+        />
       ) : movements.length === 0 ? (
         <EmptyState
           icon={<IconActivity />}
